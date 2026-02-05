@@ -1,10 +1,6 @@
 'use client'
 
 import { Slide, BrandConfig } from '@/lib/types'
-import ServiceGrowthCard from './templates/ServiceGrowthCard'
-import ServiceGrowthHero from './templates/ServiceGrowthHero'
-import CaviarEditorial from './templates/CaviarEditorial'
-import CaviarCTA from './templates/CaviarCTA'
 
 interface Props {
   slide: Slide
@@ -24,8 +20,12 @@ export default function SlidePreview({
   scale = 0.3,
 }: Props) {
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
+  const accentColor = isServiceGrowth
+    ? brand.colors.accent?.cyan || '#00D4FF'
+    : brand.colors.accent?.gold || '#C9A227'
 
-  const TemplateComponent = getTemplate(isServiceGrowth, slide)
+  const hasImage = slide.generatedImage || slide.backgroundImage
+  const imageUrl = slide.generatedImage || slide.backgroundImage
 
   return (
     <div
@@ -38,57 +38,57 @@ export default function SlidePreview({
       style={{
         width: `${1080 * scale}px`,
         height: `${1080 * scale}px`,
-        ...(isSelected
-          ? {
-              ringColor: isServiceGrowth
-                ? brand.colors.accent?.cyan || '#00D4FF'
-                : brand.colors.accent?.gold || '#C9A227',
-            }
-          : {}),
+        ...(isSelected ? { ringColor: accentColor } : {}),
       }}
+      data-slide-number={slide.number}
     >
-      <div
-        style={{
-          width: '1080px',
-          height: '1080px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-        }}
-      >
-        <TemplateComponent
-          slide={slide}
-          brand={brand}
-          backgroundImage={slide.backgroundImage}
+      {hasImage ? (
+        <img
+          src={imageUrl}
+          alt={`Slide ${slide.number}`}
+          className="w-full h-full object-cover"
+          draggable={false}
         />
-      </div>
+      ) : (
+        /* Placeholder when no image generated yet */
+        <div
+          className="w-full h-full flex flex-col items-center justify-center gap-3 p-4"
+          style={{
+            background: isServiceGrowth
+              ? 'linear-gradient(135deg, #0D0D0D, #111118)'
+              : 'linear-gradient(135deg, #1E3A5F, #2a1a10)',
+          }}
+        >
+          <div
+            className="text-center font-bold leading-tight"
+            style={{
+              fontSize: `${Math.max(11, 14 * scale / 0.3)}px`,
+              color: 'rgba(255,255,255,0.7)',
+            }}
+          >
+            {slide.headline?.replace(/\*/g, '')}
+          </div>
+          <div
+            className="text-center leading-snug"
+            style={{
+              fontSize: `${Math.max(8, 10 * scale / 0.3)}px`,
+              color: 'rgba(255,255,255,0.35)',
+            }}
+          >
+            {slide.subtext}
+          </div>
+          <div
+            className="mt-2 px-2 py-0.5 rounded text-center"
+            style={{
+              fontSize: `${Math.max(7, 8 * scale / 0.3)}px`,
+              background: `${accentColor}22`,
+              color: accentColor,
+            }}
+          >
+            Slide {slide.number} — Click Generate
+          </div>
+        </div>
+      )}
     </div>
   )
-}
-
-function getTemplate(
-  isServiceGrowth: boolean,
-  slide: Slide
-): React.ComponentType<{
-  slide: Slide
-  brand: BrandConfig
-  backgroundImage?: string
-}> {
-  if (isServiceGrowth) {
-    if (
-      slide.layout === 'full-photo-overlay' ||
-      slide.number === 1
-    ) {
-      return ServiceGrowthHero
-    }
-    return ServiceGrowthCard
-  }
-
-  // Caviar Pavers
-  if (
-    slide.layout === 'full-bleed-cta' ||
-    slide.number === slide.totalSlides
-  ) {
-    return CaviarCTA
-  }
-  return CaviarEditorial
 }

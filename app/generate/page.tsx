@@ -34,6 +34,7 @@ function GenerateWorkspace() {
   const [imageProgress, setImageProgress] = useState(0)
   const [selectedSlide, setSelectedSlide] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [imageModel, setImageModel] = useState<'pro' | 'flash'>('pro')
 
   useEffect(() => {
     if (!brandSlug) { router.push('/'); return }
@@ -81,23 +82,23 @@ function GenerateWorkspace() {
     const updatedSlides = [...brief.slides]
     for (let i = 0; i < updatedSlides.length; i++) {
       const slide = updatedSlides[i]
-      if (!slide.imageDescription) continue
+      const prompt = slide.compositionPrompt || slide.imageDescription
+      if (!prompt) continue
       setImageProgress(i + 1)
       try {
         const res = await fetch('/api/images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            imageDescription: slide.imageDescription,
-            brandColors: brand.colors,
-            aesthetic: brand.visualStyle.aesthetic,
+            compositionPrompt: prompt,
+            model: imageModel,
           }),
         })
         const data = await res.json()
         if (data.imageBase64) {
           updatedSlides[i] = {
             ...slide,
-            backgroundImage: `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`,
+            generatedImage: `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`,
           }
           setBrief({ ...brief, slides: [...updatedSlides] })
         }
@@ -108,6 +109,44 @@ function GenerateWorkspace() {
     setIsGeneratingImages(false)
     setImageProgress(0)
   }
+
+  const handleRegenerateSlide = useCallback(
+    async (slideNumber: number) => {
+      if (!brief || !brand) return
+      const slideIndex = slideNumber - 1
+      const slide = brief.slides[slideIndex]
+      const prompt = slide.compositionPrompt || slide.imageDescription
+      if (!prompt) return
+
+      setIsGeneratingImages(true)
+      setImageProgress(slideNumber)
+      try {
+        const res = await fetch('/api/images', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            compositionPrompt: prompt,
+            model: imageModel,
+          }),
+        })
+        const data = await res.json()
+        if (data.imageBase64) {
+          const updatedSlides = [...brief.slides]
+          updatedSlides[slideIndex] = {
+            ...slide,
+            generatedImage: `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`,
+          }
+          setBrief({ ...brief, slides: updatedSlides })
+        }
+      } catch (err) {
+        console.error(`Regenerate failed for slide ${slideNumber}:`, err)
+      } finally {
+        setIsGeneratingImages(false)
+        setImageProgress(0)
+      }
+    },
+    [brief, brand, imageModel]
+  )
 
   const handleSlideUpdate = useCallback(
     (updated: Slide) => {
@@ -122,7 +161,7 @@ function GenerateWorkspace() {
     (slideNumber: number, imageDataUrl: string) => {
       if (!brief) return
       const slides = brief.slides.map((s) =>
-        s.number === slideNumber ? { ...s, backgroundImage: imageDataUrl } : s
+        s.number === slideNumber ? { ...s, generatedImage: imageDataUrl } : s
       )
       setBrief({ ...brief, slides })
     },
@@ -178,6 +217,30 @@ function GenerateWorkspace() {
 
           {brief && (
             <div className="flex items-center gap-3">
+              {/* Model toggle */}
+              <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                <button
+                  onClick={() => setImageModel('pro')}
+                  className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                  style={{
+                    background: imageModel === 'pro' ? `${accentColor}20` : 'transparent',
+                    color: imageModel === 'pro' ? accentColor : 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  Pro
+                </button>
+                <button
+                  onClick={() => setImageModel('flash')}
+                  className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                  style={{
+                    background: imageModel === 'flash' ? `${accentColor}20` : 'transparent',
+                    color: imageModel === 'flash' ? accentColor : 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  Flash
+                </button>
+              </div>
+
               <button
                 onClick={handleGenerateImages}
                 disabled={isGeneratingImages}
@@ -202,13 +265,14 @@ function GenerateWorkspace() {
                     Generating {imageProgress}/{brief.slides.length}
                   </span>
                 ) : (
-                  'Generate Backgrounds'
+                  'Generate Slides'
                 )}
               </button>
               <ExportButton
                 slideCount={brief.slides.length}
                 brandSlug={brandSlug}
                 accentColor={accentColor}
+                getSlideImage={(i) => brief.slides[i]?.generatedImage || brief.slides[i]?.backgroundImage}
               />
             </div>
           )}
@@ -256,6 +320,7 @@ function GenerateWorkspace() {
                   brandSlug={brandSlug}
                   onUpdate={handleSlideUpdate}
                   onDropImage={handleDropImage}
+                  onRegenerateSlide={handleRegenerateSlide}
                 />
               </div>
             )}

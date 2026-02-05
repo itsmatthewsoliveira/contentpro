@@ -1,34 +1,24 @@
 import { NextResponse } from 'next/server'
-import { generateImage, buildImagePrompt } from '@/lib/nano-banana'
-import { BrandColors } from '@/lib/types'
+import { generateImage, ImageModel } from '@/lib/nano-banana'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { imageDescription, brandColors, aesthetic, model } = body as {
-      imageDescription: string
-      brandColors: BrandColors
-      aesthetic?: string
-      model?: string
+    const { compositionPrompt, imageDescription, model } = body as {
+      compositionPrompt?: string
+      imageDescription?: string // legacy fallback
+      model?: ImageModel
     }
 
-    if (!imageDescription) {
+    const prompt = compositionPrompt || imageDescription
+    if (!prompt) {
       return NextResponse.json(
-        { error: 'imageDescription is required' },
+        { error: 'compositionPrompt is required' },
         { status: 400 }
       )
     }
 
-    const prompt = buildImagePrompt(
-      imageDescription,
-      brandColors as unknown as Record<string, Record<string, string>>,
-      aesthetic
-    )
-
-    const result = await generateImage(
-      prompt,
-      model === 'pro' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image'
-    )
+    const result = await generateImage(prompt, model || 'pro')
 
     if (!result.imageBase64) {
       return NextResponse.json({ error: 'No image generated' }, { status: 500 })

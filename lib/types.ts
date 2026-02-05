@@ -94,11 +94,13 @@ export interface Slide {
   cta?: string | null
   elements?: string[]
   imageDescription: string
+  compositionPrompt: string // Full Nano Banana prompt for complete slide image
   layout: string
   totalSlides: number
   tag?: string
   stepNumber?: number
-  backgroundImage?: string // base64 data URL
+  generatedImage?: string // base64 data URL from Nano Banana
+  backgroundImage?: string // user-uploaded background (legacy/override)
 }
 
 export interface BriefStrategy {

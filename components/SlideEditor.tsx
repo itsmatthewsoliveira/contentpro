@@ -1,11 +1,7 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Slide, BrandConfig } from '@/lib/types'
-import ServiceGrowthCard from './templates/ServiceGrowthCard'
-import ServiceGrowthHero from './templates/ServiceGrowthHero'
-import CaviarEditorial from './templates/CaviarEditorial'
-import CaviarCTA from './templates/CaviarCTA'
 
 interface Props {
   slide: Slide
@@ -13,14 +9,16 @@ interface Props {
   brandSlug: string
   onUpdate: (updated: Slide) => void
   onDropImage: (slideNumber: number, imageDataUrl: string) => void
+  onRegenerateSlide?: (slideNumber: number) => void
 }
 
-export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropImage }: Props) {
+export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropImage, onRegenerateSlide }: Props) {
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
   const accentColor = isServiceGrowth
     ? brand.colors.accent?.cyan || '#00D4FF'
     : brand.colors.accent?.gold || '#C9A227'
 
+  const [showPrompt, setShowPrompt] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
 
   const handleDrop = useCallback(
@@ -43,12 +41,12 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
     e.dataTransfer.dropEffect = 'copy'
   }
 
-  // Pick the right template
-  const TemplateComponent = getTemplate(isServiceGrowth, slide)
+  const hasImage = slide.generatedImage || slide.backgroundImage
+  const imageUrl = slide.generatedImage || slide.backgroundImage
 
   return (
     <div className="grid grid-cols-[1fr,400px] gap-6">
-      {/* Live preview */}
+      {/* Image preview */}
       <div
         ref={dropRef}
         onDrop={handleDrop}
@@ -56,72 +54,106 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
         className="relative rounded-xl overflow-hidden border border-white/10"
         style={{ aspectRatio: '1/1', maxHeight: '600px' }}
       >
-        <div
-          style={{
-            width: '1080px',
-            height: '1080px',
-            transform: 'scale(var(--preview-scale))',
-            transformOrigin: 'top left',
-          }}
-          className="slide-render-target"
-          data-slide-number={slide.number}
-        >
-          <TemplateComponent
-            slide={slide}
-            brand={brand}
-            backgroundImage={slide.backgroundImage}
+        {hasImage ? (
+          <img
+            src={imageUrl}
+            alt={`Slide ${slide.number}`}
+            className="w-full h-full object-cover"
+            data-slide-number={slide.number}
           />
-        </div>
-
-        {/* Drop overlay hint */}
-        {!slide.backgroundImage && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
-            <div className="bg-black/60 rounded-lg px-4 py-2 text-xs text-white/50">
-              Drop image here
+        ) : (
+          <div
+            className="w-full h-full flex flex-col items-center justify-center gap-4"
+            data-slide-number={slide.number}
+            style={{
+              background: isServiceGrowth
+                ? 'linear-gradient(135deg, #0D0D0D, #111118)'
+                : 'linear-gradient(135deg, #1E3A5F, #2a1a10)',
+            }}
+          >
+            <div className="text-white/40 text-sm text-center max-w-xs">
+              {slide.headline?.replace(/\*/g, '')}
+            </div>
+            <div className="text-white/20 text-xs text-center">
+              Generate this slide or drag & drop an image
             </div>
           </div>
+        )}
+
+        {/* Regenerate button overlay */}
+        {onRegenerateSlide && (
+          <button
+            onClick={() => onRegenerateSlide(slide.number)}
+            className="absolute top-3 right-3 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = `${accentColor}44`
+              e.currentTarget.style.color = 'rgba(255,255,255,0.95)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+              e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+            }}
+          >
+            Regenerate
+          </button>
         )}
       </div>
 
       {/* Edit panel */}
       <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
-        <h3 className="text-sm font-semibold text-white/80">
-          Slide {slide.number} — Edit
+        <h3 className="text-[11px] font-medium tracking-[0.15em] uppercase text-white/30">
+          Slide {slide.number} — Edit Copy
         </h3>
 
         {/* Headline */}
         <div>
-          <label className="block text-xs text-white/50 mb-1">
-            Headline <span className="text-white/30">(*accent* words)</span>
+          <label className="block text-[11px] text-white/40 mb-1.5">
+            Headline <span className="text-white/20">(*accent* words)</span>
           </label>
           <input
             type="text"
             value={slide.headline}
             onChange={(e) => onUpdate({ ...slide, headline: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30"
+            className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}33` }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
           />
         </div>
 
         {/* Subtext */}
         <div>
-          <label className="block text-xs text-white/50 mb-1">Subtext</label>
+          <label className="block text-[11px] text-white/40 mb-1.5">Subtext</label>
           <textarea
             value={slide.subtext}
             onChange={(e) => onUpdate({ ...slide, subtext: e.target.value })}
             rows={3}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 resize-none"
+            className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none transition-colors resize-none"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}33` }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
           />
         </div>
 
         {/* Bullets */}
-        {slide.bullets && (
+        {slide.bullets && slide.bullets.length > 0 && (
           <div>
-            <label className="block text-xs text-white/50 mb-1">Bullets</label>
+            <label className="block text-[11px] text-white/40 mb-1.5">Bullets</label>
             {slide.bullets.map((bullet, i) => (
               <div key={i} className="flex gap-2 mb-2">
-                <span className="text-sm mt-2" style={{ color: accentColor }}>
-                  •
-                </span>
+                <span className="text-sm mt-2" style={{ color: accentColor }}>•</span>
                 <input
                   type="text"
                   value={bullet}
@@ -130,7 +162,13 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
                     updated[i] = e.target.value
                     onUpdate({ ...slide, bullets: updated })
                   }}
-                  className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30"
+                  className="flex-1 px-3 py-2 rounded-lg text-sm text-white focus:outline-none transition-colors"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}33` }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
                 />
               </div>
             ))}
@@ -140,66 +178,76 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
         {/* CTA */}
         {slide.cta !== undefined && slide.cta !== null && (
           <div>
-            <label className="block text-xs text-white/50 mb-1">CTA</label>
+            <label className="block text-[11px] text-white/40 mb-1.5">CTA</label>
             <input
               type="text"
               value={slide.cta || ''}
               onChange={(e) => onUpdate({ ...slide, cta: e.target.value || null })}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30"
+              className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}33` }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
             />
           </div>
         )}
 
-        {/* Background image */}
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Background Image</label>
-          {slide.backgroundImage ? (
+        {/* Composition Prompt (collapsible) */}
+        <div className="pt-2 border-t border-white/[0.04]">
+          <button
+            onClick={() => setShowPrompt(!showPrompt)}
+            className="text-[11px] text-white/30 hover:text-white/50 transition-colors cursor-pointer"
+          >
+            {showPrompt ? '▾' : '▸'} Composition Prompt
+          </button>
+          {showPrompt && (
+            <textarea
+              value={slide.compositionPrompt || ''}
+              onChange={(e) => onUpdate({ ...slide, compositionPrompt: e.target.value })}
+              rows={8}
+              className="w-full mt-2 px-3 py-2 rounded-lg text-xs text-white/60 focus:outline-none transition-colors resize-none"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.04)',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}22` }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)' }}
+            />
+          )}
+        </div>
+
+        {/* Image info */}
+        <div className="pt-2 border-t border-white/[0.04]">
+          {hasImage ? (
             <div className="flex items-center gap-2">
               <div
-                className="w-12 h-12 rounded-lg bg-cover bg-center border border-white/10"
-                style={{ backgroundImage: `url(${slide.backgroundImage})` }}
+                className="w-10 h-10 rounded-lg bg-cover bg-center border border-white/10"
+                style={{ backgroundImage: `url(${imageUrl})` }}
               />
+              <div className="flex-1">
+                <p className="text-[11px] text-white/40">Generated image</p>
+              </div>
               <button
-                onClick={() => onUpdate({ ...slide, backgroundImage: undefined })}
-                className="text-xs text-red-400 hover:text-red-300"
+                onClick={() => onUpdate({ ...slide, generatedImage: undefined, backgroundImage: undefined })}
+                className="text-[11px] text-red-400/60 hover:text-red-400 transition-colors cursor-pointer"
               >
                 Remove
               </button>
             </div>
           ) : (
-            <p className="text-xs text-white/30">
-              Drag & drop an image onto the preview, or use Generate Backgrounds
+            <p className="text-[11px] text-white/20">
+              No image yet — generate slides or drag & drop
             </p>
           )}
         </div>
 
         {/* Layout info */}
-        <div className="pt-2 border-t border-white/5">
-          <p className="text-xs text-white/30">
-            Layout: {slide.layout} | Purpose: {slide.purpose}
-          </p>
+        <div className="text-[11px] text-white/15">
+          Layout: {slide.layout} | Purpose: {slide.purpose}
         </div>
       </div>
     </div>
   )
-}
-
-function getTemplate(
-  isServiceGrowth: boolean,
-  slide: Slide
-): React.ComponentType<{
-  slide: Slide
-  brand: BrandConfig
-  backgroundImage?: string
-}> {
-  if (isServiceGrowth) {
-    if (slide.layout === 'full-photo-overlay' || slide.number === 1) {
-      return ServiceGrowthHero
-    }
-    return ServiceGrowthCard
-  }
-  if (slide.layout === 'full-bleed-cta' || slide.number === slide.totalSlides) {
-    return CaviarCTA
-  }
-  return CaviarEditorial
 }

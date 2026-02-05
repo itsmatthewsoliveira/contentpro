@@ -16,14 +16,14 @@ export async function generateBrief(
   const {
     slideCount = 7,
     postType = 'educationalCarousel',
-    imageSource = 'manual',
+    imageSource = 'nano-banana',
   } = options
 
   const postTypeConfig = brand.postTypes[postType]
   const slideStructure = postTypeConfig?.structure || []
   const totalSlides = slideStructure.length || slideCount
 
-  const aiContent = await generateWithAI(brand, topic, postType, slideStructure)
+  const aiContent = await generateWithAI(brand, brandSlug, topic, postType, slideStructure, totalSlides)
 
   return {
     meta: {
@@ -42,7 +42,7 @@ export async function generateBrief(
     slides: aiContent.slides.map((slide: Partial<Slide>, index: number) => ({
       ...slide,
       number: index + 1,
-      layout: slide.layout || suggestLayout(brandSlug, index, totalSlides),
+      layout: slide.layout || 'full-composition',
       totalSlides,
     })),
     caption: aiContent.caption,
@@ -53,9 +53,11 @@ export async function generateBrief(
 
 async function generateWithAI(
   brand: BrandConfig,
+  brandSlug: string,
   topic: string,
   postType: string,
-  slideStructure: string[]
+  slideStructure: string[],
+  totalSlides: number
 ) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -63,11 +65,11 @@ async function generateWithAI(
   }
 
   const client = new Anthropic({ apiKey })
-  const systemPrompt = buildSystemPrompt(brand, postType, slideStructure)
+  const systemPrompt = buildSystemPrompt(brand, brandSlug, postType, slideStructure, totalSlides)
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 4096,
+    max_tokens: 8192,
     system: systemPrompt,
     messages: [
       {
@@ -89,13 +91,15 @@ async function generateWithAI(
 
 function buildSystemPrompt(
   brand: BrandConfig,
+  brandSlug: string,
   postType: string,
-  slideStructure: string[]
+  slideStructure: string[],
+  totalSlides: number
 ): string {
   const slideList =
     slideStructure.length > 0
       ? slideStructure.map((s, i) => `  Slide ${i + 1}: ${s}`).join('\n')
-      : '  7 slides — you decide the structure'
+      : `  ${totalSlides} slides — you decide the structure`
 
   const voiceSection = brand.contentVoice
     ? `Voice & Tone:
@@ -105,72 +109,113 @@ function buildSystemPrompt(
 - CTA style: ${brand.contentVoice.ctaStyle}`
     : ''
 
-  const visualSection = brand.visualStyle
-    ? `Visual Context (write copy that works with this design style):
-- Aesthetic: ${brand.visualStyle.aesthetic}
-- Key elements: ${brand.visualStyle.elements.slice(0, 5).join(', ')}
-- Layouts: ${brand.visualStyle.layouts.join(', ')}`
-    : ''
+  const isServiceGrowth = brandSlug === 'servicegrowth-ai'
 
-  const isServiceGrowth = brand.name === 'ServiceGrowth AI'
-  const imageGuidance = isServiceGrowth
-    ? `IMAGE DESCRIPTIONS — CRITICAL: Do NOT write generic backgrounds. Each slide needs a CREATIVE, CONCEPTUAL composition that tells a visual story related to the slide's message. Think like a high-end agency creative director.
+  const brandIdentity = isServiceGrowth
+    ? `BRAND IDENTITY:
+- Name: ServiceGrowth AI
+- Colors: Dark #0D0D0D, Cyan #00D4FF, White #FFFFFF
+- Services: AI automation for service businesses, lead systems, CRM automation
+- Vibe: Tech-forward, insider knowledge, personal brand energy
+- Reference style: Oliver Merrick — glassmorphism cards, floating app icons, dark backgrounds
+- Logo: White text "ServiceGrowth" with cyan arrow/chevron mark — place in top-left corner`
+    : `BRAND IDENTITY:
+- Name: Caviar Pavers / Caviar Outdoor Designs
+- Colors: Brown #5C4033, Navy #1E3A5F, Gold #C9A227, Cream #F5F0E6
+- Services: Luxury paver installation, pool decks, patios, driveways, outdoor kitchens
+- Vibe: "SoHo meets Tulum" — premium outdoor living, editorial, magazine-quality
+- Location: Jacksonville, Florida
+- Logo: Gold sturgeon fish on navy background with "CAVIAR OUTDOOR DESIGNS" — place in top-left corner`
 
-Examples of what we want:
-- A hyper-realistic 3D robot version of Einstein sitting at a desk thinking, dramatic side lighting, dark moody atmosphere
-- A rocket ship launching out of a laptop screen with sparks and smoke, cinematic lighting, dark background
-- A person sitting in a floating chair surrounded by holographic UI screens and glowing data streams
-- An Elon Musk-style figure in a futuristic control room with neon cyan accents and holographic displays
-- A giant glowing neon portal ring (like a wormhole) with a silhouette of a person walking toward it, deep red/cyan color grading
-- A typewriter on a desk with words physically floating off the page in 3D, dramatic shadows
-- A chess board where the pieces are tiny robots and AI icons, dramatic macro photography
-- A human hand reaching toward a robotic hand, Michelangelo style, with electric sparks between fingers
+  const compositionGuidance = isServiceGrowth
+    ? `COMPOSITION PROMPT GUIDE — You are a creative director powered by Filatov-level visual direction. You generate the FULL DESIGNED IMAGE prompt for each slide. Nano Banana (Gemini) will generate the ENTIRE slide as one image — visuals, text, graphics, layout, branding, EVERYTHING baked in.
 
-Style rules for image descriptions:
-- Always specify: dramatic/cinematic lighting, dark moody atmosphere, 3D render quality
-- Include specific subjects: people, robots, objects, scenes — NOT abstract patterns
-- Include color direction: deep blacks, cyan/teal accents (#00D4FF glow), neon highlights
-- Make each slide's image conceptually connected to its headline/message
-- Think mixed media: 3D renders + photography + neon effects
-- NO generic stock photo vibes. Think Behance top picks, award-winning agency work
-- NO text in the image — the text overlay is handled separately`
-    : `IMAGE DESCRIPTIONS — CRITICAL: Each slide needs an editorial-quality, magazine-style composition. Think luxury lifestyle photography meets Brazilian premium design.
+VISUAL STANDARD: NY FASHION meets SOFTWARE meets SERVICE BUSINESS. Beautiful, polished, magazine-worthy by DEFAULT.
 
-Examples of what we want:
-- Golden hour aerial shot of a completed paver patio with infinity pool overlooking Jacksonville skyline
-- Close-up macro of travertine paver texture with water droplets, warm golden lighting
-- A family hosting dinner on an elegantly lit outdoor kitchen and paver patio at dusk
-- Architectural detail shot: herringbone paver pattern leading to a modern pool, dramatic perspective
-- Before/after split: bare yard transforming into luxury outdoor living space
-- Drone shot of a curved paver driveway leading to a Mediterranean-style home
-- Close-up of a craftsman's hands laying pavers with precision, golden hour backlighting
+CAMERA & QUALITY DIRECTION (include in every prompt):
+- Default: "Shot on Sony A7RV with 35mm f/1.4 lens" or "Canon R5 with 85mm f/1.4"
+- Lighting: Professional softboxes, dramatic studio lighting, cinematic rim lighting, neon accents
+- Quality: Tack sharp, rich colors, beautiful bokeh, magazine-worthy, retouched to commercial perfection
+- For 3D/CGI scenes: "Hyper-realistic 3D render, Octane quality, cinematic global illumination"
 
-Style rules for image descriptions:
-- Always specify: golden hour or dramatic natural lighting, warm color grading
-- Include specific subjects: outdoor spaces, pavers, pools, patios, people enjoying spaces
-- Color direction: warm earth tones, navy blue sky/water accents, golden light
-- Editorial magazine quality — NOT stock photography
-- Lifestyle context: show people living in these spaces
-- NO text in the image — the text overlay is handled separately`
+DESIGN PATTERNS TO USE:
+- Glassmorphism cards with frosted glass blur effects on dark backgrounds
+- Bold white headlines with high contrast, cyan #00D4FF accent on key words
+- Floating app icons (ChatGPT, Notion, Slack, n8n, GoHighLevel) for tech context
+- Category tags at top of slides as pills/badges
+- Colored bullet point markers (cyan circles)
+- "Swipe" indicators on first slides
+- Dark/blurred backgrounds that create depth
+- 3D creative compositions: robots, neon portals, rocket ships, holographic displays
+- Cinematic lighting, dramatic shadows, dark moody atmosphere
+- Mixed media: 3D renders + photography + neon effects
+- Premium SaaS visual language: clean, modern, trustworthy, inspires confidence
 
-  return `You are a top-tier social media content strategist AND creative director creating an Instagram carousel for ${brand.name}.
+MASTER FORMULA for each compositionPrompt:
+[CAMERA/RENDER QUALITY] + [LIGHTING SETUP] + [SCENE/BACKGROUND] + [HERO VISUAL SUBJECT] + [KEY VISUAL ELEMENTS & TEXTURES] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font, size, color, placement] + [DESIGN ELEMENTS: cards, pills, accents] + [LOGO PLACEMENT] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
 
-Brand: ${brand.name}
-Tagline: "${brand.tagline}"
-Website: ${brand.website}
-${brand.location ? `Location: ${brand.location}` : ''}
+EXAMPLE compositionPrompt:
+"Hyper-realistic 3D render with cinematic global illumination on dark moody background (#0D0D0D) with subtle cyan volumetric fog. Center composition: a photorealistic 3D robot version of Einstein sitting at a futuristic glass desk, holographic data screens floating around him, dramatic rim lighting with cyan (#00D4FF) neon edge glow. Tack-sharp details on metallic surfaces, beautiful light bokeh in background. Top-left: ServiceGrowth AI logo (white text, cyan chevron mark). Top-right: '01/07' slide counter in small white text. Lower third: a frosted glass card (glassmorphism, 15% white opacity, heavy blur backdrop, thin white border) containing bold white sans-serif headline 'How I *Automate* Lead Follow-Up' with 'Automate' in cyan #00D4FF, 48px equivalent. Below: smaller white text 16px 'The exact 5-step system I use to never miss a lead again.' Thin cyan accent line at bottom of card. Premium agency quality, Behance-level design, commercial retouching. Square 1:1 format, 1080x1080px."
+
+ANOTHER EXAMPLE:
+"Shot on Sony A7RV with 50mm f/1.2 lens, professional studio lighting with dramatic side key light. Dark moody studio (#0D0D0D) with volumetric cyan light beams. A sleek white robotic hand emerging from a laptop screen, reaching toward floating holographic app icons (Slack, ChatGPT, GoHighLevel) that orbit in a circle, each icon glowing with subtle neon rim light. Shallow depth of field, razor-sharp foreground, beautiful bokeh on background particles. Top-left: ServiceGrowth AI logo. Top-right: '03/07'. Center-bottom: glassmorphism card with bold white headline 'Your *AI* Sales Team' — 'AI' in cyan. Subtext: 'Working 24/7 so you don't have to.' Clean composition, commercial retouching quality. Square 1:1, 1080x1080px."`
+    : `COMPOSITION PROMPT GUIDE — You are a creative director powered by Filatov-level visual direction. You generate the FULL DESIGNED IMAGE prompt for each slide. Nano Banana (Gemini) will generate the ENTIRE slide as one image — visuals, text, graphics, layout, branding, EVERYTHING baked in.
+
+VISUAL STANDARD: Architectural Digest meets Mediterranean lifestyle meets Brazilian premium social media. Beautiful, polished, magazine-worthy by DEFAULT.
+
+CAMERA & QUALITY DIRECTION (include in every prompt):
+- Default: "Shot on Sony A7RV with 35mm f/1.4 lens" or "Hasselblad medium format"
+- Lighting: Golden hour natural light, professional softboxes, warm dramatic lighting
+- Quality: Tack sharp details on every texture, rich warm tones, beautiful depth of field, magazine-worthy
+- Textures to highlight: porous travertine, brushed stone, weathered teak, polished marble, natural stone grain
+
+DESIGN PATTERNS TO USE:
+- Editorial magazine layouts with asymmetric compositions
+- Mix of serif (Playfair Display) and sans-serif (Montserrat) typography
+- Luxury lifestyle photography: golden hour, pool decks, pavers, outdoor living
+- Gold accent lines and elegant dividers
+- Floating text cards on lifestyle photos with semi-transparent overlays
+- Intentional negative space
+- Color grading: warm earth tones (#5C4033), navy (#1E3A5F) backgrounds, gold (#C9A227) accents, cream (#F5F0E6) text
+- Brazilian premium social media aesthetic — bold, sophisticated, editorial
+- Close-up material textures with warm lighting
+- Before/after transformations, architectural detail shots, dramatic perspective
+
+MASTER FORMULA for each compositionPrompt:
+[CAMERA + LENS] + [LIGHTING SETUP] + [SCENE/LOCATION] + [SUBJECT/FOCAL POINT] + [KEY TEXTURES & MATERIALS] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font style, size, color, placement] + [DESIGN ELEMENTS: cards, accent lines, frames] + [LOGO PLACEMENT] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
+
+EXAMPLE compositionPrompt:
+"Stunning editorial photograph shot on Sony A7RV with 35mm f/1.4 lens. A newly completed travertine pool deck stretches toward a modern outdoor kitchen, steam rising gently from the heated spa at golden hour. Sunlight rakes across the natural stone surfaces casting long elegant shadows. Tack-sharp details on every texture — porous travertine, brushed stainless steel, weathered teak furniture. Shallow depth of field softly blurs the Mediterranean landscaping. Rich warm color grading. Top-left: Caviar Outdoor Designs logo (gold sturgeon on small navy badge). Overlaid on the bottom third: semi-transparent navy card (#1E3A5F, 85% opacity) with elegant gold accent line on top. Inside: large serif headline (Playfair Display, cream #F5F0E6) 'The *Art* of Outdoor Living' with 'Art' in gold #C9A227, 44px. Below: smaller sans-serif (Montserrat, white) 'Transforming Jacksonville homes into luxury retreats.' 16px. Bottom-right: '01/07' counter in small gold text. Architectural Digest quality, aspirational yet authentic. Square 1:1 format, 1080x1080px."
+
+ANOTHER EXAMPLE:
+"Cinematic photograph captured on Hasselblad medium format with 80mm lens. Dramatic low-angle perspective of a herringbone paver driveway leading to a Mediterranean-style Jacksonville home at twilight. Warm amber landscape lighting illuminates the paver edges, pool water glows turquoise in the background. Rich warm tones, professional color grading, every paver texture razor sharp. Top-center: Caviar Outdoor Designs logo (gold sturgeon). Right side: floating cream text card with gold border — bold serif headline 'Driveways That *Arrive*' with 'Arrive' in gold, 42px. Below: 'Premium hardscaping that makes the first impression.' in clean sans-serif 14px. Bottom-right: '04/07'. Magazine-spread quality, luxury real estate aesthetic. Square 1:1, 1080x1080px."`
+
+  return `You are a creative director AND content strategist for ${brand.name}. You create Instagram carousels where EVERY SLIDE is a fully designed image — not just text on a background, but a complete premium composition with visuals, typography, design elements, and branding ALL baked into one image.
+
+${brandIdentity}
 
 ${voiceSection}
 
-${visualSection}
+VOICE RULES — Write like a founder who's winning:
+- Confident, modern, clear, no fluff, human
+- NEVER use: "In today's world", "Unlock", "Revolutionary", "Discover", "Game-changer", "Seamless", corporate filler
+- Headlines: punchy, scannable, max 8 words. Wrap 1-2 KEY WORDS in *asterisks* for accent color
+- Subtext: 1-2 sentences of supporting detail — benefit-first, direct response logic
+- Bullets: short, benefit-driven phrases (3-5 per slide where appropriate)
+- Every slide has intention — no noise, no filler slides
 
-Formatting Rules:
-- Wrap 1-2 KEY WORDS per headline in *asterisks* to mark them for accent-color highlighting (e.g. "How I *automate* lead follow-up")
-- Headlines should be punchy and scannable — max 8 words
-- Subtext is 1-2 sentences of supporting detail
-- Bullets are short, benefit-driven phrases (3-5 per slide where appropriate)
+${compositionGuidance}
 
-${imageGuidance}
+CRITICAL RULES FOR compositionPrompt:
+- Each prompt generates ONE COMPLETE DESIGNED SLIDE — background, visuals, text, branding, everything
+- VARY the compositions — don't repeat the same layout every slide. Mix hero shots, card layouts, split layouts, full-bleed, centered
+- Each composition should feel like a premium design agency made it
+- Text in the image must be legible — specify font size, weight, color, and placement clearly
+- Include the EXACT text that should appear in the image (headline, subtext, bullets)
+- Always include brand logo placement and slide counter
+- Think Brazilian luxury social media design aesthetic — bold, editorial, sophisticated
+- Specify "Square 1:1 format, 1080x1080px" in every prompt
+- NEVER make generic or stock-photo looking content
 
 Slide Structure for this "${postType}" post:
 ${slideList}
@@ -190,9 +235,10 @@ You MUST return valid JSON matching this exact schema:
       "subtext": "string — supporting copy",
       "bullets": ["string array — optional, include where appropriate"],
       "cta": "string or null — only for CTA slides",
-      "elements": ["string array — e.g. 'icons', 'photo', 'texture'"],
-      "imageDescription": "string — detailed prompt for AI image generation",
-      "layout": "string — suggested layout from the brand's available layouts"
+      "elements": ["string array — visual elements in this composition"],
+      "imageDescription": "string — brief description of the visual concept",
+      "compositionPrompt": "string — DETAILED Nano Banana prompt for the FULL designed slide image. Include every visual element, text placement, typography direction, brand elements, and creative concept. This prompt will be sent directly to the AI image generator to create the COMPLETE slide.",
+      "layout": "string — composition style: hero-visual, glassmorphism-card, editorial-overlay, split-layout, centered-cta, full-bleed, icon-grid, etc."
     }
   ],
   "caption": "string — Instagram caption with line breaks as \\n",
@@ -200,23 +246,4 @@ You MUST return valid JSON matching this exact schema:
 }
 
 Return ONLY the JSON object. No explanation, no markdown fences.`
-}
-
-function suggestLayout(brandSlug: string, slideIndex: number, totalSlides: number): string {
-  const isFirst = slideIndex === 0
-  const isLast = slideIndex === totalSlides - 1
-
-  if (brandSlug === 'servicegrowth-ai') {
-    if (isFirst) return 'full-photo-overlay'
-    if (isLast) return 'card-on-blur'
-    return ['card-on-blur', 'icon-diagram', 'split-content'][slideIndex % 3]
-  }
-
-  if (brandSlug === 'caviar-pavers') {
-    if (isFirst) return 'editorial-overlay'
-    if (isLast) return 'full-bleed-cta'
-    return ['editorial-overlay', 'texture-focus', 'magazine-spread'][slideIndex % 3]
-  }
-
-  return 'default'
 }

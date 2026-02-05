@@ -6,17 +6,26 @@ interface GenerateImageResult {
   mimeType: string | null
 }
 
+export type ImageModel = 'flash' | 'pro'
+
+const MODEL_IDS: Record<ImageModel, string> = {
+  flash: 'gemini-2.5-flash-image',
+  pro: 'gemini-2.0-flash-exp',
+}
+
 export async function generateImage(
   prompt: string,
-  model: string = 'gemini-2.5-flash-image'
+  model: ImageModel = 'pro'
 ): Promise<GenerateImageResult> {
   const apiKey = process.env.GOOGLE_AI_API_KEY
   if (!apiKey) {
     throw new Error('GOOGLE_AI_API_KEY environment variable not set')
   }
 
+  const modelId = MODEL_IDS[model]
+
   const response = await fetch(
-    `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`,
+    `${GEMINI_BASE_URL}/${modelId}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,23 +53,4 @@ export async function generateImage(
   }
 
   return result
-}
-
-export function buildImagePrompt(
-  imageDescription: string,
-  brandColors: Record<string, Record<string, string>>,
-  _aesthetic?: string
-): string {
-  // Detect brand by color palette
-  const isServiceGrowth = brandColors.primary?.background === '#0D0D0D'
-
-  let prompt = imageDescription
-
-  if (isServiceGrowth) {
-    prompt += `. Cinematic lighting, dramatic shadows, dark moody atmosphere. 3D render quality mixed with photography. Color grading: deep blacks with cyan/teal (#00D4FF) neon accent glows and highlights. Hyper-realistic, award-winning creative agency quality. Square 1:1 aspect ratio composition. ABSOLUTELY NO TEXT, NO WORDS, NO LETTERS, NO WATERMARKS in the image.`
-  } else {
-    prompt += `. Editorial magazine photography quality. Golden hour warm lighting, rich color grading with earth tones, navy blue accents, and gold highlights. Luxury lifestyle aesthetic. Square 1:1 aspect ratio composition. ABSOLUTELY NO TEXT, NO WORDS, NO LETTERS, NO WATERMARKS in the image.`
-  }
-
-  return prompt
 }

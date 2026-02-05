@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { BrandConfig, Brief, Slide } from '@/lib/types'
+import { overlayLogo } from '@/lib/logo-overlay'
 import TopicInput from '@/components/TopicInput'
 import CarouselPreview from '@/components/CarouselPreview'
 import SlideEditor from '@/components/SlideEditor'
@@ -96,9 +97,16 @@ function GenerateWorkspace() {
         })
         const data = await res.json()
         if (data.imageBase64) {
+          const rawImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
+          // Overlay the real brand logo for consistency
+          const finalImage = await overlayLogo(rawImage, brandSlug, {
+            logoSize: isServiceGrowth ? 44 : 36,
+            padding: 40,
+            position: 'top-left',
+          })
           updatedSlides[i] = {
             ...slide,
-            generatedImage: `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`,
+            generatedImage: finalImage,
           }
           setBrief({ ...brief, slides: [...updatedSlides] })
         }
@@ -131,10 +139,16 @@ function GenerateWorkspace() {
         })
         const data = await res.json()
         if (data.imageBase64) {
+          const rawImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
+          const finalImage = await overlayLogo(rawImage, brandSlug, {
+            logoSize: isServiceGrowth ? 44 : 36,
+            padding: 40,
+            position: 'top-left',
+          })
           const updatedSlides = [...brief.slides]
           updatedSlides[slideIndex] = {
             ...slide,
-            generatedImage: `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`,
+            generatedImage: finalImage,
           }
           setBrief({ ...brief, slides: updatedSlides })
         }

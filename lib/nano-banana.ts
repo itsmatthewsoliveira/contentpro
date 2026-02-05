@@ -10,7 +10,7 @@ export type ImageModel = 'flash' | 'pro'
 
 const MODEL_IDS: Record<ImageModel, string> = {
   flash: 'gemini-2.5-flash-image',
-  pro: 'gemini-2.0-flash-exp',
+  pro: 'gemini-3-pro-image-preview',
 }
 
 export async function generateImage(

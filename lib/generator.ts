@@ -151,44 +151,58 @@ DESIGN PATTERNS TO USE:
 - Mixed media: 3D renders + photography + neon effects
 - Premium SaaS visual language: clean, modern, trustworthy, inspires confidence
 
+IMPORTANT — LOGO: Do NOT include any logo in the composition. The real logo will be overlaid separately. Leave the top-left area clean for logo placement.
+
 MASTER FORMULA for each compositionPrompt:
-[CAMERA/RENDER QUALITY] + [LIGHTING SETUP] + [SCENE/BACKGROUND] + [HERO VISUAL SUBJECT] + [KEY VISUAL ELEMENTS & TEXTURES] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font, size, color, placement] + [DESIGN ELEMENTS: cards, pills, accents] + [LOGO PLACEMENT] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
+[CAMERA/RENDER QUALITY] + [LIGHTING SETUP] + [SCENE/BACKGROUND] + [HERO VISUAL SUBJECT] + [KEY VISUAL ELEMENTS & TEXTURES] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font, size, color, placement] + [DESIGN ELEMENTS: cards, pills, accents] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
 
 EXAMPLE compositionPrompt:
-"Hyper-realistic 3D render with cinematic global illumination on dark moody background (#0D0D0D) with subtle cyan volumetric fog. Center composition: a photorealistic 3D robot version of Einstein sitting at a futuristic glass desk, holographic data screens floating around him, dramatic rim lighting with cyan (#00D4FF) neon edge glow. Tack-sharp details on metallic surfaces, beautiful light bokeh in background. Top-left: ServiceGrowth AI logo (white text, cyan chevron mark). Top-right: '01/07' slide counter in small white text. Lower third: a frosted glass card (glassmorphism, 15% white opacity, heavy blur backdrop, thin white border) containing bold white sans-serif headline 'How I *Automate* Lead Follow-Up' with 'Automate' in cyan #00D4FF, 48px equivalent. Below: smaller white text 16px 'The exact 5-step system I use to never miss a lead again.' Thin cyan accent line at bottom of card. Premium agency quality, Behance-level design, commercial retouching. Square 1:1 format, 1080x1080px."
+"Hyper-realistic 3D render with cinematic global illumination on dark moody background (#0D0D0D) with subtle cyan volumetric fog. Center composition: a photorealistic 3D robot version of Einstein sitting at a futuristic glass desk, holographic data screens floating around him, dramatic rim lighting with cyan (#00D4FF) neon edge glow. Tack-sharp details on metallic surfaces, beautiful light bokeh in background. Top-right: '01/07' slide counter in small white text. Lower third: a frosted glass card (glassmorphism, 15% white opacity, heavy blur backdrop, thin white border) containing bold white sans-serif headline 'How I Automate Lead Follow-Up' with 'Automate' in cyan #00D4FF, 48px equivalent. Below: smaller white text 16px 'The exact 5-step system I use to never miss a lead again.' Thin cyan accent line at bottom of card. Premium agency quality, Behance-level design, commercial retouching. Square 1:1 format, 1080x1080px. NO LOGO in the image."
 
 ANOTHER EXAMPLE:
-"Shot on Sony A7RV with 50mm f/1.2 lens, professional studio lighting with dramatic side key light. Dark moody studio (#0D0D0D) with volumetric cyan light beams. A sleek white robotic hand emerging from a laptop screen, reaching toward floating holographic app icons (Slack, ChatGPT, GoHighLevel) that orbit in a circle, each icon glowing with subtle neon rim light. Shallow depth of field, razor-sharp foreground, beautiful bokeh on background particles. Top-left: ServiceGrowth AI logo. Top-right: '03/07'. Center-bottom: glassmorphism card with bold white headline 'Your *AI* Sales Team' — 'AI' in cyan. Subtext: 'Working 24/7 so you don't have to.' Clean composition, commercial retouching quality. Square 1:1, 1080x1080px."`
-    : `COMPOSITION PROMPT GUIDE — You are a creative director powered by Filatov-level visual direction. You generate the FULL DESIGNED IMAGE prompt for each slide. Nano Banana (Gemini) will generate the ENTIRE slide as one image — visuals, text, graphics, layout, branding, EVERYTHING baked in.
+"Shot on Sony A7RV with 50mm f/1.2 lens, professional studio lighting with dramatic side key light. Dark moody studio (#0D0D0D) with volumetric cyan light beams. A sleek white robotic hand emerging from a laptop screen, reaching toward floating holographic app icons (Slack, ChatGPT, GoHighLevel) that orbit in a circle, each icon glowing with subtle neon rim light. Shallow depth of field, razor-sharp foreground, beautiful bokeh on background particles. Top-right: '03/07'. Center-bottom: glassmorphism card with bold white headline 'Your AI Sales Team' — 'AI' in cyan. Subtext: 'Working 24/7 so you don't have to.' Clean composition, commercial retouching quality. Square 1:1, 1080x1080px. NO LOGO in the image."`
+    : `COMPOSITION PROMPT GUIDE — You are a creative director creating Brazilian premium social media design. You generate the FULL DESIGNED IMAGE prompt for each slide. The AI image generator will create the ENTIRE slide as one image — visuals, text, graphics, layout, EVERYTHING baked in.
 
-VISUAL STANDARD: Architectural Digest meets Mediterranean lifestyle meets Brazilian premium social media. Beautiful, polished, magazine-worthy by DEFAULT.
+VISUAL STANDARD: Brazilian premium social media design (like Dani Bloom / Social Media HOF). NOT generic stock photography. Think editorial magazine layouts where TYPOGRAPHY DOMINATES and photography serves as a sophisticated backdrop.
 
-CAMERA & QUALITY DIRECTION (include in every prompt):
+THIS IS WHAT THE STYLE LOOKS LIKE — study these patterns:
+- Deep navy (#1E3A5F) or warm brown (#5C4033) or cream (#F5F0E6) solid/gradient backgrounds
+- HUGE bold mixed-weight typography that takes up 40-60% of the slide area
+- Mix of serif AND sans-serif in the SAME headline — e.g., thin sans-serif "The art of" + bold serif "OUTDOOR LIVING"
+- Lifestyle editorial photography INTEGRATED with text — woman at desk, hands holding coffee, person working on laptop, close-up of materials
+- Text that WRAPS AROUND or OVERLAYS the photo subject — not just text box on top of photo
+- Varying font weights within one headline: some words BOLD/BLACK, others light/thin
+- Asymmetric text positioning — left-aligned bottom, right column, diagonal flow
+- A thin top navigation bar with "CATEGORY" on left and "BRAND NAME" on right
+- Clean minimal design elements — thin gold lines, simple geometric accents
+- Muted, sophisticated color palette — NOT bright, NOT saturated
+- Intentional negative space — some areas are breathing room, not filled
+- Professional color grading: warm tones, desaturated, editorial mood
+
+CAMERA & QUALITY DIRECTION (for photo elements):
 - Default: "Shot on Sony A7RV with 35mm f/1.4 lens" or "Hasselblad medium format"
-- Lighting: Golden hour natural light, professional softboxes, warm dramatic lighting
-- Quality: Tack sharp details on every texture, rich warm tones, beautiful depth of field, magazine-worthy
-- Textures to highlight: porous travertine, brushed stone, weathered teak, polished marble, natural stone grain
+- Lighting: Warm studio softboxes, golden hour natural light, soft directional light
+- Quality: Tack sharp, rich warm tones, beautiful depth of field, magazine-worthy
 
-DESIGN PATTERNS TO USE:
-- Editorial magazine layouts with asymmetric compositions
-- Mix of serif (Playfair Display) and sans-serif (Montserrat) typography
-- Luxury lifestyle photography: golden hour, pool decks, pavers, outdoor living
-- Gold accent lines and elegant dividers
-- Floating text cards on lifestyle photos with semi-transparent overlays
-- Intentional negative space
-- Color grading: warm earth tones (#5C4033), navy (#1E3A5F) backgrounds, gold (#C9A227) accents, cream (#F5F0E6) text
-- Brazilian premium social media aesthetic — bold, sophisticated, editorial
-- Close-up material textures with warm lighting
-- Before/after transformations, architectural detail shots, dramatic perspective
+IMPORTANT — LOGO: Do NOT include any logo in the composition. The real logo will be overlaid separately. Leave the top-left area clean for logo placement.
+
+COLOR PALETTE:
+- Backgrounds: Deep navy #1E3A5F, warm chocolate brown #5C4033, rich cream #F5F0E6
+- Text: Cream/off-white #F5F0E6 on dark backgrounds, navy #1E3A5F on light backgrounds
+- Accents: Gold #C9A227 for highlight words, thin accent lines
+- Overall mood: warm, muted, sophisticated — NOT bright or flashy
 
 MASTER FORMULA for each compositionPrompt:
-[CAMERA + LENS] + [LIGHTING SETUP] + [SCENE/LOCATION] + [SUBJECT/FOCAL POINT] + [KEY TEXTURES & MATERIALS] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font style, size, color, placement] + [DESIGN ELEMENTS: cards, accent lines, frames] + [LOGO PLACEMENT] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
+[BACKGROUND: solid color, gradient, or editorial photo] + [TYPOGRAPHY: exact text, mixed fonts/weights, sizes, placement — this is the HERO element] + [PHOTO ELEMENT: lifestyle editorial photo integrated with layout, if applicable] + [DESIGN ELEMENTS: thin lines, navigation bar, geometric accents] + [COLOR GRADING: warm, muted, editorial] + [SLIDE COUNTER] + [QUALITY: Brazilian premium social media design]
 
 EXAMPLE compositionPrompt:
-"Stunning editorial photograph shot on Sony A7RV with 35mm f/1.4 lens. A newly completed travertine pool deck stretches toward a modern outdoor kitchen, steam rising gently from the heated spa at golden hour. Sunlight rakes across the natural stone surfaces casting long elegant shadows. Tack-sharp details on every texture — porous travertine, brushed stainless steel, weathered teak furniture. Shallow depth of field softly blurs the Mediterranean landscaping. Rich warm color grading. Top-left: Caviar Outdoor Designs logo (gold sturgeon on small navy badge). Overlaid on the bottom third: semi-transparent navy card (#1E3A5F, 85% opacity) with elegant gold accent line on top. Inside: large serif headline (Playfair Display, cream #F5F0E6) 'The *Art* of Outdoor Living' with 'Art' in gold #C9A227, 44px. Below: smaller sans-serif (Montserrat, white) 'Transforming Jacksonville homes into luxury retreats.' 16px. Bottom-right: '01/07' counter in small gold text. Architectural Digest quality, aspirational yet authentic. Square 1:1 format, 1080x1080px."
+"Deep navy background (#1E3A5F) with subtle warm gradient. Top bar: thin line with 'OUTDOOR LIVING' left-aligned and 'CAVIAR' right-aligned in tiny cream uppercase tracking. Right side: editorial photograph of a luxury completed paver patio at golden hour, shot on Sony A7RV with 35mm f/1.4 — warm color grading, shallow depth of field, tack-sharp stone textures. The photo takes up the right 55% of the composition. Left side: large mixed-weight typography — thin sans-serif (Montserrat Light, cream) 'The art of' at 28px, then bold serif (Playfair Display Black, cream) 'OUTDOOR' at 64px, then 'LIVING' at 64px below it. A thin gold (#C9A227) horizontal accent line between the heading and a small cream body text at 14px: 'Transforming Jacksonville backyards into luxury retreats.' Bottom-right: '01/07' in small gold text. Brazilian premium social media design quality. Square 1:1 format, 1080x1080px. NO LOGO in the image."
 
 ANOTHER EXAMPLE:
-"Cinematic photograph captured on Hasselblad medium format with 80mm lens. Dramatic low-angle perspective of a herringbone paver driveway leading to a Mediterranean-style Jacksonville home at twilight. Warm amber landscape lighting illuminates the paver edges, pool water glows turquoise in the background. Rich warm tones, professional color grading, every paver texture razor sharp. Top-center: Caviar Outdoor Designs logo (gold sturgeon). Right side: floating cream text card with gold border — bold serif headline 'Driveways That *Arrive*' with 'Arrive' in gold, 42px. Below: 'Premium hardscaping that makes the first impression.' in clean sans-serif 14px. Bottom-right: '04/07'. Magazine-spread quality, luxury real estate aesthetic. Square 1:1, 1080x1080px."`
+"Warm brown background (#5C4033) full bleed. Center-left: editorial photo of a craftsman's hands laying travertine pavers, shot on Sony A7RV 85mm f/1.4, extreme shallow depth of field, golden hour backlighting creating rim light on the hands. The photo is positioned center-left, slightly overlapping the text area. Right side, overlapping the photo edge: HUGE bold serif text (Playfair Display, cream #F5F0E6) 'Every DETAIL matters.' — 'DETAIL' in extra-bold 72px, rest in light 36px. Below: thin gold line, then small sans-serif 'From the first paver to the final seal.' 14px cream. Top bar: 'CRAFTSMANSHIP' left, 'CAVIAR' right, tiny uppercase. Bottom-right: '03/07'. Muted warm editorial color grading. Square 1:1, 1080x1080px. NO LOGO in the image."
+
+ANOTHER EXAMPLE:
+"Rich cream background (#F5F0E6). Asymmetric layout. Top-left area: GIANT serif headline (Playfair Display, navy #1E3A5F) spanning 3 lines — 'Seu espaço' in thin weight 32px, 'MERECE' in bold 80px, 'mais.' in italic 40px. The text takes up the top-left 60% of the composition. Bottom-right: editorial photo of a stunning outdoor kitchen setup at dusk, warm amber uplighting on stone columns, shot on Hasselblad medium format. Photo bleeds off the right and bottom edges. A thin gold accent line separates text from photo area. Small navy body text below headline: 'Premium hardscaping for the home that deserves it.' 14px Montserrat. Bottom: '05/07' in gold. Sophisticated, editorial, magazine-quality. Square 1:1, 1080x1080px. NO LOGO in the image."`
 
   return `You are a creative director AND content strategist for ${brand.name}. You create Instagram carousels where EVERY SLIDE is a fully designed image — not just text on a background, but a complete premium composition with visuals, typography, design elements, and branding ALL baked into one image.
 
@@ -207,15 +221,18 @@ VOICE RULES — Write like a founder who's winning:
 ${compositionGuidance}
 
 CRITICAL RULES FOR compositionPrompt:
-- Each prompt generates ONE COMPLETE DESIGNED SLIDE — background, visuals, text, branding, everything
-- VARY the compositions — don't repeat the same layout every slide. Mix hero shots, card layouts, split layouts, full-bleed, centered
+- Each prompt generates ONE COMPLETE DESIGNED SLIDE — background, visuals, text, design elements
+- NEVER include a logo — the real logo is overlaid separately after generation
+- End every prompt with "NO LOGO in the image."
+- VARY the compositions — don't repeat the same layout every slide. Mix photo-dominant, text-dominant, split, centered, asymmetric
 - Each composition should feel like a premium design agency made it
-- Text in the image must be legible — specify font size, weight, color, and placement clearly
+- TYPOGRAPHY IS THE HERO — text should be large, bold, mixed-weight, intentionally placed
+- Specify font size, weight, color, and placement clearly for all text
 - Include the EXACT text that should appear in the image (headline, subtext, bullets)
-- Always include brand logo placement and slide counter
+- Include slide counter (e.g. "01/07") in a corner
 - Think Brazilian luxury social media design aesthetic — bold, editorial, sophisticated
 - Specify "Square 1:1 format, 1080x1080px" in every prompt
-- NEVER make generic or stock-photo looking content
+- NEVER make generic or stock-photo looking content — this is DESIGN, not photography
 
 Slide Structure for this "${postType}" post:
 ${slideList}

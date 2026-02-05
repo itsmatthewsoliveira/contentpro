@@ -13,9 +13,15 @@ const MODEL_IDS: Record<ImageModel, string> = {
   pro: 'gemini-3-pro-image-preview',
 }
 
+interface ReferenceImage {
+  data: string // base64
+  mimeType: string
+}
+
 export async function generateImage(
   prompt: string,
-  model: ImageModel = 'pro'
+  model: ImageModel = 'pro',
+  referenceImages: ReferenceImage[] = []
 ): Promise<GenerateImageResult> {
   const apiKey = process.env.GOOGLE_AI_API_KEY
   if (!apiKey) {
@@ -24,13 +30,35 @@ export async function generateImage(
 
   const modelId = MODEL_IDS[model]
 
+  // Build parts array: reference images first, then the text prompt
+  const parts: Array<Record<string, unknown>> = []
+
+  // Add reference images (up to 3 to keep request size manageable)
+  for (const ref of referenceImages.slice(0, 3)) {
+    parts.push({
+      inlineData: {
+        mimeType: ref.mimeType,
+        data: ref.data,
+      },
+    })
+  }
+
+  // Add text prompt — if we have reference images, prefix with style instruction
+  if (referenceImages.length > 0) {
+    parts.push({
+      text: `Study the design style in the reference images above. Match that exact style — the typography, layout, color treatment, design elements, and overall aesthetic. Now generate this composition:\n\n${prompt}`,
+    })
+  } else {
+    parts.push({ text: prompt })
+  }
+
   const response = await fetch(
     `${GEMINI_BASE_URL}/${modelId}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts }],
         generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
       }),
     }

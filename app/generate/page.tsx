@@ -31,6 +31,7 @@ function GenerateWorkspace() {
   const [brand, setBrand] = useState<BrandConfig | null>(null)
   const [brief, setBrief] = useState<Brief | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingStep, setGeneratingStep] = useState('')
   const [isGeneratingImages, setIsGeneratingImages] = useState(false)
   const [imageProgress, setImageProgress] = useState(0)
   const [selectedSlide, setSelectedSlide] = useState<number | null>(null)
@@ -56,6 +57,7 @@ function GenerateWorkspace() {
 
   const handleGenerate = async (topic: string, postType: string, slideCount: number) => {
     setIsGenerating(true)
+    setGeneratingStep('Writing copy & composition prompts...')
     setError(null)
     setBrief(null)
     setSelectedSlide(null)
@@ -65,14 +67,17 @@ function GenerateWorkspace() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandSlug, topic, postType, slideCount }),
       })
+      setGeneratingStep('Processing response...')
       const data = await res.json()
       if (data.error) throw new Error(data.error)
+      setGeneratingStep(`Done — ${data.slides?.length || slideCount} slides ready`)
       setBrief(data)
       setSelectedSlide(0)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setIsGenerating(false)
+      setGeneratingStep('')
     }
   }
 
@@ -93,6 +98,7 @@ function GenerateWorkspace() {
           body: JSON.stringify({
             compositionPrompt: prompt,
             model: imageModel,
+            brandSlug,
           }),
         })
         const data = await res.json()
@@ -135,6 +141,7 @@ function GenerateWorkspace() {
           body: JSON.stringify({
             compositionPrompt: prompt,
             model: imageModel,
+            brandSlug,
           }),
         })
         const data = await res.json()
@@ -301,6 +308,26 @@ function GenerateWorkspace() {
             isGenerating={isGenerating}
           />
         </div>
+
+        {/* Generation progress */}
+        {isGenerating && (
+          <div className="mb-8 animate-fade-in">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="animate-spin inline-block w-4 h-4 border-2 border-white/10 rounded-full" style={{ borderTopColor: accentColor }} />
+              <span className="text-sm text-white/60">{generatingStep || 'Starting...'}</span>
+            </div>
+            <div className="w-full max-w-2xl h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)`,
+                  width: generatingStep.includes('Processing') ? '80%' : generatingStep.includes('Done') ? '100%' : '40%',
+                  animation: generatingStep.includes('Writing') ? 'pulse 2s ease-in-out infinite' : 'none',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (

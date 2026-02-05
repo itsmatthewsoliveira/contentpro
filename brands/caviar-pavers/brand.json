@@ -1,0 +1,168 @@
+{
+  "name": "Caviar Pavers",
+  "tagline": "Luxury Outdoor Living",
+  "website": "caviarpavers.com",
+  "location": "Jacksonville, Florida",
+  
+  "colors": {
+    "primary": {
+      "brown": "#5C4033",
+      "brownLight": "#8B6914",
+      "brownDark": "#3D2914"
+    },
+    "secondary": {
+      "blue": "#1E3A5F",
+      "blueLight": "#2E5A8F",
+      "blueDark": "#0F1F33",
+      "navy": "#1A2F4A"
+    },
+    "accent": {
+      "gold": "#C9A227",
+      "goldLight": "#E5C158",
+      "goldDark": "#8B7014",
+      "cream": "#F5F0E6"
+    },
+    "neutral": {
+      "white": "#FFFFFF",
+      "offWhite": "#FAF8F5",
+      "warmGray": "#9A9186",
+      "charcoal": "#2C2C2C"
+    },
+    "meaning": {
+      "brown": "Earth - pavers, natural materials, craftsmanship",
+      "blue": "Water - pools, outdoor living, tranquility",
+      "gold": "Luxury - premium quality, modern elegance"
+    }
+  },
+  
+  "typography": {
+    "headlineFont": "Playfair Display",
+    "headlineFontWeight": "600",
+    "subheadFont": "Montserrat",
+    "subheadFontWeight": "500",
+    "bodyFont": "Montserrat",
+    "bodyFontWeight": "400",
+    "accentFont": "Cormorant Garamond",
+    "sizes": {
+      "heroHeadline": "56px",
+      "slideHeadline": "36px",
+      "subheadline": "18px",
+      "body": "15px",
+      "caption": "12px"
+    },
+    "style": {
+      "headlineCase": "normal",
+      "tracking": "0.02em",
+      "mixedWeights": true,
+      "note": "Mix serif headlines with sans-serif body for editorial feel"
+    }
+  },
+  
+  "visualStyle": {
+    "aesthetic": "SoHo meets Tulum with European touches - luxury editorial, magazine-quality",
+    "reference": "Brazilian premium social media design",
+    "elements": [
+      "Asymmetrical layouts",
+      "Editorial typography with mixed fonts",
+      "Lifestyle photography at golden hour",
+      "Close-up texture shots of pavers",
+      "People enjoying outdoor spaces",
+      "Architectural angles",
+      "Negative space used intentionally",
+      "Gold accent lines and frames",
+      "Floating text cards on photos",
+      "Elegant pill buttons for CTAs"
+    ],
+    "layouts": [
+      "editorial-overlay: Text overlaid on lifestyle photo with asymmetric placement",
+      "split-diagonal: Photo and text divided diagonally",
+      "texture-focus: Close-up texture with elegant text overlay",
+      "magazine-spread: Multi-image collage with editorial text",
+      "full-bleed-cta: Full photo with floating CTA card"
+    ],
+    "photoTreatment": {
+      "colorGrade": "Warm, golden tones",
+      "style": "Lifestyle, not stock",
+      "subjects": [
+        "Completed projects at golden hour",
+        "Close-up paver textures and patterns",
+        "People relaxing in outdoor spaces",
+        "Pool and patio combinations",
+        "Architectural detail shots"
+      ]
+    }
+  },
+  
+  "contentVoice": {
+    "tone": "Premium, confident, expert but approachable",
+    "perspective": "We/Our - professional team voice",
+    "hooks": [
+      "Transform your [space] into [aspiration]",
+      "The difference between good and exceptional",
+      "What [X] years of experience taught us about [topic]",
+      "Your outdoor space deserves [benefit]"
+    ],
+    "ctaStyle": "Book Your Free Consultation | Get Your Custom Quote"
+  },
+  
+  "postTypes": {
+    "processCarousel": {
+      "description": "Showing the 5-step installation process",
+      "slideCount": "7 slides",
+      "structure": [
+        "Hook - 'How We Transform Your Outdoor Space'",
+        "Step 1: Discovery Call",
+        "Step 2: Custom Estimate",
+        "Step 3: 3D Design Preview",
+        "Step 4: Design Approval",
+        "Step 5: Expert Installation",
+        "CTA - 'Ready to Start?'"
+      ]
+    },
+    "beforeAfter": {
+      "description": "Project transformations",
+      "style": "Editorial treatment, not basic side-by-side",
+      "elements": ["Dramatic reveal", "Stats overlay", "Testimonial integration"]
+    },
+    "promoOffer": {
+      "description": "Seasonal offers and discounts",
+      "elements": ["Bold percentage", "Urgency element", "Premium CTA button"]
+    },
+    "educational": {
+      "description": "Tips and expertise sharing",
+      "topics": [
+        "Paver material comparisons",
+        "Maintenance tips",
+        "Design trends",
+        "What to look for in a contractor"
+      ]
+    },
+    "projectShowcase": {
+      "description": "Featuring completed work",
+      "elements": ["Multiple angles", "Detail shots", "Lifestyle context"]
+    }
+  },
+  
+  "instagram": {
+    "dimensions": {
+      "square": { "width": 1080, "height": 1080 },
+      "portrait": { "width": 1080, "height": 1350 }
+    },
+    "safeZones": {
+      "top": 60,
+      "bottom": 60,
+      "left": 40,
+      "right": 40
+    }
+  },
+  
+  "services": [
+    "Paver Installation",
+    "Patio Design",
+    "Pool Deck Installation",
+    "Driveway Pavers",
+    "Outdoor Kitchen Areas",
+    "Retaining Walls",
+    "3D Design Previews"
+  ]
+}

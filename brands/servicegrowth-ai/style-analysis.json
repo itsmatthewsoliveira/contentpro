@@ -1,0 +1,28 @@
+{
+  "fonts": {
+    "primary": "Bold serif with elegant contrast like Playfair Display",
+    "secondary": "Clean sans-serif with multiple weights like Montserrat",
+    "accent": "Script/handwritten style for emphasis words"
+  },
+  "typographyPatterns": [
+    "Large bold headline with one key word in contrasting script font",
+    "Mixed weight hierarchy: heavy main message + light supporting text",
+    "Stacked text blocks with varying sizes for visual rhythm",
+    "Key phrases broken across multiple lines for dramatic impact"
+  ],
+  "layoutPatterns": [
+    "Full-bleed lifestyle photography with overlay text positioning",
+    "Asymmetrical text placement - often top-left or bottom-right corners",
+    "Split compositions: dominant imagery with dedicated text zones",
+    "Minimal photography as backdrop with typography as hero element",
+    "Grid-based layouts with generous white space"
+  ],
+  "designElements": [
+    "Small category tags in corners (VENDAS, MARKETING DIGITAL, CONEXÃO)",
+    "Dotted connector lines linking related text elements",
+    "Rounded pill-shaped accent bubbles for callout text",
+    "Subtle geometric frames or borders around key messages",
+    "Hand-drawn style underlines and decorative flourishes"
+  ],
+  "promptGuidance": "Create sophisticated social media designs that balance bold typography with lifestyle photography, using asymmetrical layouts and mixed font weights. Incorporate small decorative elements like dotted lines and pill-shaped callouts to guide the eye, while maintaining generous white space for a premium, editorial feel."
+}

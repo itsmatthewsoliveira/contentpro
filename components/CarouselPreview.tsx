@@ -7,6 +7,7 @@ interface Props {
   slides: Slide[]
   brand: BrandConfig
   brandSlug: string
+  imageErrors?: Record<number, string>
   selectedSlide: number | null
   onSelectSlide: (index: number) => void
 }
@@ -15,6 +16,7 @@ export default function CarouselPreview({
   slides,
   brand,
   brandSlug,
+  imageErrors,
   selectedSlide,
   onSelectSlide,
 }: Props) {
@@ -41,6 +43,11 @@ export default function CarouselPreview({
             <p className="text-xs text-white/40 mt-2 text-center truncate max-w-[300px]">
               {slide.purpose || `Slide ${slide.number}`}
             </p>
+            {imageErrors?.[slide.number] && (
+              <p className="text-[11px] text-red-300/80 mt-1 text-center truncate max-w-[300px]">
+                {imageErrors[slide.number]}
+              </p>
+            )}
           </div>
         ))}
       </div>

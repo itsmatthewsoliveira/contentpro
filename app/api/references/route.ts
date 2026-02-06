@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
-
-const BRANDS_DIR = path.join(process.cwd(), 'brands')
-
-function getRefDir(brandSlug: string): string {
-  return path.join(BRANDS_DIR, brandSlug, 'style-references')
-}
-
-function getMimeType(ext: string): string {
-  const map: Record<string, string> = {
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.webp': 'image/webp',
-    '.gif': 'image/gif',
-  }
-  return map[ext.toLowerCase()] || 'application/octet-stream'
-}
+import {
+  ensureRuntimeBrandDirs,
+  getMimeTypeForPath,
+  getRuntimeReferencesDir,
+  listReferenceEntries,
+  resolveReferenceEntry,
+} from '@/lib/storage'
 
 // GET — list references or serve a specific file
 export async function GET(request: NextRequest) {
@@ -29,20 +19,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'brand parameter required' }, { status: 400 })
   }
 
-  const refDir = getRefDir(brand)
-
   // Serve a specific file
   if (file) {
-    const safeName = path.basename(file) // prevent path traversal
-    const filePath = path.join(refDir, safeName)
-    if (!fs.existsSync(filePath)) {
+    const entry = resolveReferenceEntry(brand, file)
+    if (!entry || !fs.existsSync(entry.filePath)) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
-    const buffer = fs.readFileSync(filePath)
-    const ext = path.extname(safeName)
+    const buffer = fs.readFileSync(entry.filePath)
     return new NextResponse(buffer, {
       headers: {
-        'Content-Type': getMimeType(ext),
+        'Content-Type': getMimeTypeForPath(entry.filePath),
         'Cache-Control': 'public, max-age=3600',
       },
     })
@@ -50,17 +36,12 @@ export async function GET(request: NextRequest) {
 
   // List all reference images
   try {
-    if (!fs.existsSync(refDir)) {
-      return NextResponse.json([])
-    }
-
-    const files = fs.readdirSync(refDir)
-      .filter((f) => /\.(png|jpg|jpeg|webp|gif)$/i.test(f))
-      .sort()
-
-    const images = files.map((filename) => ({
-      filename,
-      url: `/api/references?brand=${encodeURIComponent(brand)}&file=${encodeURIComponent(filename)}`,
+    const entries = listReferenceEntries(brand)
+    const images = entries.map((entry) => ({
+      filename: entry.id,
+      displayName: entry.filename,
+      source: entry.source,
+      url: `/api/references?brand=${encodeURIComponent(brand)}&file=${encodeURIComponent(entry.id)}`,
     }))
 
     return NextResponse.json(images)
@@ -86,10 +67,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type. Use PNG, JPG, WebP, or GIF.' }, { status: 400 })
     }
 
-    const refDir = getRefDir(brand)
-    if (!fs.existsSync(refDir)) {
-      fs.mkdirSync(refDir, { recursive: true })
-    }
+    ensureRuntimeBrandDirs(brand)
+    const refDir = getRuntimeReferencesDir(brand)
 
     // Generate a clean filename
     const timestamp = Date.now()
@@ -100,9 +79,12 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     fs.writeFileSync(filePath, buffer)
 
+    const fileId = `runtime:${filename}`
     return NextResponse.json({
-      filename,
-      url: `/api/references?brand=${encodeURIComponent(brand)}&file=${encodeURIComponent(filename)}`,
+      filename: fileId,
+      displayName: filename,
+      source: 'runtime',
+      url: `/api/references?brand=${encodeURIComponent(brand)}&file=${encodeURIComponent(fileId)}`,
     })
   } catch (err) {
     console.error('Upload error:', err)
@@ -120,12 +102,22 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'brand and file parameters required' }, { status: 400 })
   }
 
-  const safeName = path.basename(file) // prevent path traversal
-  const filePath = path.join(getRefDir(brand), safeName)
+  const entry = resolveReferenceEntry(brand, file)
 
   try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath)
+    if (!entry) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    }
+
+    if (entry.source !== 'runtime') {
+      return NextResponse.json(
+        { error: 'Bundled references are read-only' },
+        { status: 400 }
+      )
+    }
+
+    if (fs.existsSync(entry.filePath)) {
+      fs.unlinkSync(entry.filePath)
     }
     return NextResponse.json({ success: true })
   } catch (err) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface StyleAnalysis {
   fonts?: {
@@ -9,11 +9,6 @@ interface StyleAnalysis {
     accent?: string
   }
   typographyPatterns?: string[]
-  colorUsage?: {
-    backgrounds?: string[]
-    text?: string[]
-    accents?: string[]
-  }
   layoutPatterns?: string[]
   designElements?: string[]
   promptGuidance?: string
@@ -31,14 +26,7 @@ export default function StyleAnalyzer({ brandSlug, accentColor }: Props) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load cached analysis on mount
-  useEffect(() => {
-    if (isOpen && !analysis && !isLoading) {
-      loadAnalysis()
-    }
-  }, [isOpen])
-
-  const loadAnalysis = async () => {
+  const loadAnalysis = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -52,7 +40,14 @@ export default function StyleAnalyzer({ brandSlug, accentColor }: Props) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [brandSlug])
+
+  // Load cached analysis on open
+  useEffect(() => {
+    if (isOpen && !analysis && !isLoading) {
+      loadAnalysis()
+    }
+  }, [isOpen, analysis, isLoading, loadAnalysis])
 
   const runAnalysis = async () => {
     setIsAnalyzing(true)
@@ -193,29 +188,6 @@ export default function StyleAnalyzer({ brandSlug, accentColor }: Props) {
                       </li>
                     ))}
                   </ul>
-                </div>
-              )}
-
-              {/* Colors */}
-              {analysis.colorUsage && (
-                <div>
-                  <h4 className="text-[10px] font-medium tracking-[0.1em] uppercase text-white/20 mb-1.5">
-                    Colors Detected
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      ...(analysis.colorUsage.backgrounds || []),
-                      ...(analysis.colorUsage.text || []),
-                      ...(analysis.colorUsage.accents || []),
-                    ].filter((c, i, arr) => arr.indexOf(c) === i).slice(0, 8).map((color, i) => (
-                      <div
-                        key={i}
-                        className="w-6 h-6 rounded-md border border-white/10"
-                        style={{ background: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
                 </div>
               )}
 

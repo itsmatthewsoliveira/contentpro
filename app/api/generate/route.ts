@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { brandSlug, topic, postType, slideCount } = body
 
-    if (!brandSlug || !topic) {
+    if (typeof brandSlug !== 'string' || typeof topic !== 'string' || !brandSlug.trim() || !topic.trim()) {
       return NextResponse.json(
         { error: 'brandSlug and topic are required' },
         { status: 400 }
@@ -19,9 +19,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
     }
 
+    const resolvedPostType = typeof postType === 'string' && postType.trim()
+      ? postType
+      : 'educationalCarousel'
+
+    if (!brand.postTypes[resolvedPostType]) {
+      return NextResponse.json(
+        { error: `Invalid postType for brand: ${resolvedPostType}` },
+        { status: 400 }
+      )
+    }
+
+    const numericSlideCount = Number(slideCount)
+    const resolvedSlideCount = Number.isFinite(numericSlideCount)
+      ? Math.min(10, Math.max(1, Math.floor(numericSlideCount)))
+      : 7
+
     const brief = await generateBrief(brandSlug, brand, topic, {
-      postType: postType || 'educationalCarousel',
-      slideCount: slideCount || 7,
+      postType: resolvedPostType,
+      slideCount: resolvedSlideCount,
     })
 
     return NextResponse.json(brief)

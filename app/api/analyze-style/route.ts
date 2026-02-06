@@ -3,8 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
 import sharp from 'sharp'
-
-const BRANDS_DIR = path.join(process.cwd(), 'brands')
+import { listReferenceEntries, readStyleAnalysis, writeStyleAnalysis } from '@/lib/storage'
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024 // 4MB limit for Claude
 const MAX_DIMENSION = 1568 // Claude's recommended max dimension
 
@@ -51,26 +50,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'brandSlug required' }, { status: 400 })
     }
 
-    const refDir = path.join(BRANDS_DIR, brandSlug, 'style-references')
-    if (!fs.existsSync(refDir)) {
-      return NextResponse.json({ error: 'No style references found' }, { status: 404 })
-    }
-
-    // Load up to 3 reference images
-    const files = fs.readdirSync(refDir)
-      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
-      .slice(0, 3)
-
-    if (files.length === 0) {
+    const entries = listReferenceEntries(brandSlug, { limit: 3 })
+    if (entries.length === 0) {
       return NextResponse.json({ error: 'No images in style-references folder' }, { status: 404 })
     }
 
     // Process images (resize/compress if needed)
     const imageContents: Anthropic.ImageBlockParam[] = []
-    for (const file of files) {
-      const filePath = path.join(refDir, file)
+    for (const entry of entries) {
       try {
-        const { data, mediaType } = await processImage(filePath)
+        const { data, mediaType } = await processImage(entry.filePath)
         imageContents.push({
           type: 'image',
           source: {
@@ -80,7 +69,7 @@ export async function POST(request: NextRequest) {
           },
         })
       } catch (err) {
-        console.error(`Failed to process image ${file}:`, err)
+        console.error(`Failed to process image ${entry.filePath}:`, err)
         // Skip this image and continue with others
       }
     }
@@ -147,9 +136,8 @@ JSON only, no explanation.`,
     try {
       const analysis = JSON.parse(jsonStr)
 
-      // Save the analysis to a file for future use
-      const analysisPath = path.join(BRANDS_DIR, brandSlug, 'style-analysis.json')
-      fs.writeFileSync(analysisPath, JSON.stringify(analysis, null, 2))
+      // Save analysis in runtime storage
+      writeStyleAnalysis(brandSlug, analysis as Record<string, unknown>)
 
       return NextResponse.json(analysis)
     } catch {
@@ -173,16 +161,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'brand parameter required' }, { status: 400 })
   }
 
-  const analysisPath = path.join(BRANDS_DIR, brandSlug, 'style-analysis.json')
-
-  if (!fs.existsSync(analysisPath)) {
+  const analysis = readStyleAnalysis(brandSlug)
+  if (!analysis) {
     return NextResponse.json({ error: 'No analysis found. Run analysis first.' }, { status: 404 })
   }
 
-  try {
-    const content = fs.readFileSync(analysisPath, 'utf-8')
-    return NextResponse.json(JSON.parse(content))
-  } catch {
-    return NextResponse.json({ error: 'Failed to read analysis' }, { status: 500 })
-  }
+  return NextResponse.json(analysis)
 }

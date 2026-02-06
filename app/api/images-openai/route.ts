@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server'
 
-export type OpenAIImageModel = 'gpt-image-1' | 'dall-e-3'
+function getBrandStyleEnvelope(brandSlug?: string): string {
+  if (brandSlug === 'servicegrowth-ai') {
+    return `STYLE LOCK — ServiceGrowth AI:
+- Colors: #0D0D0D background, #00D4FF accent, #FFFFFF text only
+- Typography: modern sans-serif only
+- Aesthetic: premium dark tech editorial
+- English only, perfect spelling
+- Avoid generic stock-business visuals and overdone AI glow`
+  }
+
+  if (brandSlug === 'caviar-pavers') {
+    return `STYLE LOCK — Caviar Pavers:
+- Colors: #1E3A5F navy, #5C4033 brown, #C9A227 gold, #F5F0E6 cream only
+- Typography: elegant serif headline + clean sans-serif support
+- Aesthetic: luxury architectural editorial
+- English only, perfect spelling
+- Avoid cyber/tech motifs and low-end stock construction imagery`
+  }
+
+  return 'STYLE LOCK: Professional editorial Instagram design, English only, no generic AI stock style.'
+}
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY
@@ -10,10 +30,10 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { compositionPrompt, imageDescription, model = 'gpt-image-1' } = body as {
+    const { compositionPrompt, imageDescription, brandSlug } = body as {
       compositionPrompt?: string
       imageDescription?: string
-      model?: OpenAIImageModel
+      brandSlug?: string
     }
 
     const prompt = compositionPrompt || imageDescription
@@ -25,7 +45,9 @@ export async function POST(request: Request) {
     }
 
     // Add Instagram slide format instruction
-    const fullPrompt = `${prompt}
+    const fullPrompt = `${getBrandStyleEnvelope(brandSlug)}
+
+${prompt}
 
 CRITICAL REQUIREMENTS:
 - This is a 1080x1080 pixel Instagram slide
@@ -34,22 +56,7 @@ CRITICAL REQUIREMENTS:
 - ENGLISH ONLY — no other languages
 - This should look like a professionally designed social media graphic, not a photograph`
 
-    // Build request based on model
-    const requestBody: Record<string, unknown> = {
-      model,
-      prompt: fullPrompt,
-      n: 1,
-      size: '1024x1024',
-      response_format: 'b64_json',
-    }
-
-    // gpt-image-1 supports 'quality' parameter, dall-e-3 uses 'quality' differently
-    if (model === 'gpt-image-1') {
-      requestBody.quality = 'high'
-    } else if (model === 'dall-e-3') {
-      requestBody.quality = 'hd' // DALL-E 3 uses 'standard' or 'hd'
-      requestBody.style = 'vivid' // 'vivid' or 'natural'
-    }
+    console.log('OpenAI prompt length:', fullPrompt.length)
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -57,13 +64,23 @@ CRITICAL REQUIREMENTS:
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: fullPrompt,
+        n: 1,
+        size: '1024x1024',
+      }),
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('OpenAI API error:', errorData)
-      throw new Error(errorData.error?.message || 'OpenAI API request failed')
+      const errorText = await response.text()
+      console.error('OpenAI API error:', response.status, errorText)
+      try {
+        const errorData = JSON.parse(errorText)
+        throw new Error(errorData.error?.message || `OpenAI API error: ${response.status}`)
+      } catch {
+        throw new Error(`OpenAI API error: ${response.status} - ${errorText.slice(0, 200)}`)
+      }
     }
 
     const data = await response.json()
@@ -77,7 +94,6 @@ CRITICAL REQUIREMENTS:
       imageBase64,
       mimeType: 'image/png',
       engine: 'openai',
-      model,
     })
   } catch (error) {
     console.error('OpenAI image generation error:', error)

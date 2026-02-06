@@ -38,9 +38,10 @@ function GenerateWorkspace() {
   const [imageProgress, setImageProgress] = useState(0)
   const [selectedSlide, setSelectedSlide] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [imageErrors, setImageErrors] = useState<Record<number, string>>({})
   const [imageModel, setImageModel] = useState<'pro' | 'flash'>('pro')
   const [imageEngine, setImageEngine] = useState<'gemini' | 'openai'>('gemini')
-  const [openaiModel, setOpenaiModel] = useState<'gpt-image-1' | 'dall-e-3'>('gpt-image-1')
+  // OpenAI only uses gpt-image-1 (no model toggle needed)
 
   useEffect(() => {
     if (!brandSlug) { router.push('/'); return }
@@ -63,6 +64,7 @@ function GenerateWorkspace() {
     setIsGenerating(true)
     setGeneratingStep('Writing copy & composition prompts...')
     setError(null)
+    setImageErrors({})
     setBrief(null)
     setSelectedSlide(null)
     try {
@@ -89,6 +91,7 @@ function GenerateWorkspace() {
     if (!brief || !brand) return
     setIsGeneratingImages(true)
     setImageProgress(0)
+    setImageErrors({})
     const updatedSlides = [...brief.slides]
 
     // Pick the API endpoint based on selected engine
@@ -97,7 +100,13 @@ function GenerateWorkspace() {
     for (let i = 0; i < updatedSlides.length; i++) {
       const slide = updatedSlides[i]
       const prompt = slide.compositionPrompt || slide.imageDescription
-      if (!prompt) continue
+      if (!prompt) {
+        setImageErrors((prev) => ({
+          ...prev,
+          [slide.number]: 'Missing composition prompt for this slide.',
+        }))
+        continue
+      }
       setImageProgress(i + 1)
       try {
         const res = await fetch(apiEndpoint, {
@@ -105,11 +114,14 @@ function GenerateWorkspace() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             compositionPrompt: prompt,
-            model: imageEngine === 'openai' ? openaiModel : imageModel,
+            model: imageModel, // Gemini uses pro/flash, OpenAI always uses gpt-image-1
             brandSlug,
           }),
         })
         const data = await res.json()
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `Image generation failed (${res.status})`)
+        }
         if (data.imageBase64) {
           const rawImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
           // Overlay the real brand logo for consistency
@@ -122,9 +134,18 @@ function GenerateWorkspace() {
             ...slide,
             generatedImage: finalImage,
           }
+          setImageErrors((prev) => {
+            const next = { ...prev }
+            delete next[slide.number]
+            return next
+          })
           setBrief({ ...brief, slides: [...updatedSlides] })
+        } else {
+          throw new Error('No image returned by the engine.')
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown image generation error'
+        setImageErrors((prev) => ({ ...prev, [slide.number]: message }))
         console.error(`Image gen failed for slide ${i + 1}:`, err)
       }
     }
@@ -151,11 +172,14 @@ function GenerateWorkspace() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             compositionPrompt: prompt,
-            model: imageEngine === 'openai' ? openaiModel : imageModel,
+            model: imageModel, // Gemini uses pro/flash, OpenAI always uses gpt-image-1
             brandSlug,
           }),
         })
         const data = await res.json()
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `Image generation failed (${res.status})`)
+        }
         if (data.imageBase64) {
           const rawImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
           const finalImage = await overlayLogo(rawImage, brandSlug, {
@@ -168,16 +192,25 @@ function GenerateWorkspace() {
             ...slide,
             generatedImage: finalImage,
           }
+          setImageErrors((prev) => {
+            const next = { ...prev }
+            delete next[slide.number]
+            return next
+          })
           setBrief({ ...brief, slides: updatedSlides })
+        } else {
+          throw new Error('No image returned by the engine.')
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown image generation error'
+        setImageErrors((prev) => ({ ...prev, [slide.number]: message }))
         console.error(`Regenerate failed for slide ${slideNumber}:`, err)
       } finally {
         setIsGeneratingImages(false)
         setImageProgress(0)
       }
     },
-    [brief, brand, imageModel, imageEngine, openaiModel]
+    [brief, brand, brandSlug, isServiceGrowth, imageModel, imageEngine]
   )
 
   const handleSlideUpdate = useCallback(
@@ -301,33 +334,7 @@ function GenerateWorkspace() {
                 </div>
               )}
 
-              {/* OpenAI model toggle (only shown when OpenAI is selected) */}
-              {imageEngine === 'openai' && (
-                <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <button
-                    onClick={() => setOpenaiModel('gpt-image-1')}
-                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
-                    style={{
-                      background: openaiModel === 'gpt-image-1' ? `${accentColor}20` : 'transparent',
-                      color: openaiModel === 'gpt-image-1' ? accentColor : 'rgba(255,255,255,0.4)',
-                    }}
-                    title="GPT Image 1 — best text rendering"
-                  >
-                    GPT-4o
-                  </button>
-                  <button
-                    onClick={() => setOpenaiModel('dall-e-3')}
-                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
-                    style={{
-                      background: openaiModel === 'dall-e-3' ? `${accentColor}20` : 'transparent',
-                      color: openaiModel === 'dall-e-3' ? accentColor : 'rgba(255,255,255,0.4)',
-                    }}
-                    title="DALL-E 3 — artistic style"
-                  >
-                    DALL-E 3
-                  </button>
-                </div>
-              )}
+              {/* Note: OpenAI uses gpt-image-1 only, no model toggle needed */}
 
               <button
                 onClick={handleGenerateImages}
@@ -415,6 +422,24 @@ function GenerateWorkspace() {
           </div>
         )}
 
+        {/* Per-slide image errors */}
+        {!error && Object.keys(imageErrors).length > 0 && (
+          <div
+            className="mb-8 p-4 rounded-xl text-sm animate-fade-in"
+            style={{
+              background: 'rgba(255,60,60,0.06)',
+              border: '1px solid rgba(255,60,60,0.12)',
+              color: '#ffb3b3',
+            }}
+          >
+            {Object.entries(imageErrors)
+              .sort((a, b) => Number(a[0]) - Number(b[0]))
+              .map(([slideNum, message]) => (
+                <div key={slideNum}>{`Slide ${slideNum}: ${message}`}</div>
+              ))}
+          </div>
+        )}
+
         {/* Carousel preview */}
         {brief && (
           <div className="space-y-10 animate-fade-in">
@@ -422,6 +447,7 @@ function GenerateWorkspace() {
               slides={brief.slides}
               brand={brand}
               brandSlug={brandSlug}
+              imageErrors={imageErrors}
               selectedSlide={selectedSlide}
               onSelectSlide={setSelectedSlide}
             />

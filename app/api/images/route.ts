@@ -1,42 +1,25 @@
 import { NextResponse } from 'next/server'
-import { generateImage, ImageModel } from '@/lib/nano-banana'
+import { generateImage, ImageModel, ReferenceImage } from '@/lib/nano-banana'
+import { listReferenceEntries, getMimeTypeForPath } from '@/lib/storage'
 import fs from 'fs'
-import path from 'path'
 
-// Cache loaded reference images per brand
-const referenceCache: Record<string, Array<{ data: string; mimeType: string }>> = {}
+// Load up to 3 reference images for a brand
+function loadReferenceImages(brandSlug: string): ReferenceImage[] {
+  const entries = listReferenceEntries(brandSlug, { limit: 3 })
+  const refs: ReferenceImage[] = []
 
-function loadStyleReferences(brandSlug: string): Array<{ data: string; mimeType: string }> {
-  if (referenceCache[brandSlug]) return referenceCache[brandSlug]
-
-  const refDir = path.join(process.cwd(), 'brands', brandSlug, 'style-references')
-  const refs: Array<{ data: string; mimeType: string }> = []
-
-  try {
-    if (!fs.existsSync(refDir)) return refs
-
-    const files = fs.readdirSync(refDir)
-      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
-      .slice(0, 3) // Max 3 reference images
-
-    for (const file of files) {
-      const filePath = path.join(refDir, file)
-      const buffer = fs.readFileSync(filePath)
-      const ext = path.extname(file).toLowerCase()
-      const mimeType = ext === '.png' ? 'image/png'
-        : ext === '.webp' ? 'image/webp'
-        : 'image/jpeg'
-
+  for (const entry of entries) {
+    try {
+      const buffer = fs.readFileSync(entry.filePath)
       refs.push({
         data: buffer.toString('base64'),
-        mimeType,
+        mimeType: getMimeTypeForPath(entry.filePath),
       })
+    } catch (err) {
+      console.error(`Failed to load reference ${entry.filename}:`, err)
     }
-  } catch (err) {
-    console.error(`Failed to load style references for ${brandSlug}:`, err)
   }
 
-  referenceCache[brandSlug] = refs
   return refs
 }
 
@@ -58,11 +41,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Load style reference images for this brand
-    // Anti-bleeding instructions are built into nano-banana.ts
-    const referenceImages = brandSlug ? loadStyleReferences(brandSlug) : []
+    // Load reference images for this brand (with anti-bleeding instructions in nano-banana)
+    const referenceImages = brandSlug ? loadReferenceImages(brandSlug) : []
+    console.log(`Loaded ${referenceImages.length} reference images for ${brandSlug}`)
 
-    const result = await generateImage(prompt, model || 'pro', referenceImages)
+    const result = await generateImage(prompt, model || 'pro', {
+      brandSlug,
+      referenceImages,
+    })
 
     if (!result.imageBase64) {
       return NextResponse.json({ error: 'No image generated' }, { status: 500 })

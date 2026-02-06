@@ -110,6 +110,14 @@ export interface BriefStrategy {
   callToAction: string
 }
 
+export interface CarouselTheme {
+  artDirection: string
+  lighting: string
+  framing: string
+  textureMotif: string
+  consistencyAnchor: string
+}
+
 export interface Brief {
   meta: {
     brand: string
@@ -124,6 +132,7 @@ export interface Brief {
     visualStyle: BrandVisualStyle
   }
   strategy: BriefStrategy
+  carouselTheme?: CarouselTheme
   slides: Slide[]
   caption: string
   hashtags: string[]

@@ -273,7 +273,8 @@ export async function generateBrief(
 
   const postTypeConfig = brand.postTypes[postType]
   const slideStructure = postTypeConfig?.structure || []
-  const totalSlides = slideStructure.length || slideCount
+  // User's slideCount always takes priority
+  const totalSlides = slideCount
 
   const aiContent = await generateWithAI(brand, brandSlug, topic, slideStructure, totalSlides)
 

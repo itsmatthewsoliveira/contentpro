@@ -109,13 +109,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    if (entry.source !== 'runtime') {
-      return NextResponse.json(
-        { error: 'Bundled references are read-only' },
-        { status: 400 }
-      )
-    }
-
+    // Allow deleting both runtime and bundled references
     if (fs.existsSync(entry.filePath)) {
       fs.unlinkSync(entry.filePath)
     }

@@ -173,32 +173,28 @@ export default function StyleReferences({ brandSlug, accentColor }: Props) {
                   />
                   {/* Hover overlay with remove button */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-                    {img.source !== 'bundled' ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleRemove(img.filename)
-                        }}
-                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                        style={{
-                          background: 'rgba(255,60,60,0.2)',
-                          border: '1px solid rgba(255,60,60,0.3)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255,60,60,0.4)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(255,60,60,0.2)'
-                        }}
-                        title={`Remove ${img.displayName || img.filename}`}
-                      >
-                        <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-white/60">Bundled</span>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemove(img.filename)
+                      }}
+                      className="w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                      style={{
+                        background: 'rgba(255,60,60,0.2)',
+                        border: '1px solid rgba(255,60,60,0.3)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,60,60,0.4)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,60,60,0.2)'
+                      }}
+                      title={`Remove ${img.displayName || img.filename}`}
+                    >
+                      <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                   {/* Filename tooltip */}
                   <div className="absolute bottom-0 left-0 right-0 px-1.5 py-1 bg-black/70 opacity-0 group-hover/thumb:opacity-100 transition-opacity">

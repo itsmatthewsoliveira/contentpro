@@ -39,6 +39,8 @@ function GenerateWorkspace() {
   const [selectedSlide, setSelectedSlide] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [imageModel, setImageModel] = useState<'pro' | 'flash'>('pro')
+  const [imageEngine, setImageEngine] = useState<'gemini' | 'openai'>('gemini')
+  const [openaiModel, setOpenaiModel] = useState<'gpt-image-1' | 'dall-e-3'>('gpt-image-1')
 
   useEffect(() => {
     if (!brandSlug) { router.push('/'); return }
@@ -88,18 +90,22 @@ function GenerateWorkspace() {
     setIsGeneratingImages(true)
     setImageProgress(0)
     const updatedSlides = [...brief.slides]
+
+    // Pick the API endpoint based on selected engine
+    const apiEndpoint = imageEngine === 'openai' ? '/api/images-openai' : '/api/images'
+
     for (let i = 0; i < updatedSlides.length; i++) {
       const slide = updatedSlides[i]
       const prompt = slide.compositionPrompt || slide.imageDescription
       if (!prompt) continue
       setImageProgress(i + 1)
       try {
-        const res = await fetch('/api/images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             compositionPrompt: prompt,
-            model: imageModel,
+            model: imageEngine === 'openai' ? openaiModel : imageModel,
             brandSlug,
           }),
         })
@@ -134,15 +140,18 @@ function GenerateWorkspace() {
       const prompt = slide.compositionPrompt || slide.imageDescription
       if (!prompt) return
 
+      // Pick the API endpoint based on selected engine
+      const apiEndpoint = imageEngine === 'openai' ? '/api/images-openai' : '/api/images'
+
       setIsGeneratingImages(true)
       setImageProgress(slideNumber)
       try {
-        const res = await fetch('/api/images', {
+        const res = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             compositionPrompt: prompt,
-            model: imageModel,
+            model: imageEngine === 'openai' ? openaiModel : imageModel,
             brandSlug,
           }),
         })
@@ -168,7 +177,7 @@ function GenerateWorkspace() {
         setImageProgress(0)
       }
     },
-    [brief, brand, imageModel]
+    [brief, brand, imageModel, imageEngine, openaiModel]
   )
 
   const handleSlideUpdate = useCallback(
@@ -240,29 +249,85 @@ function GenerateWorkspace() {
 
           {brief && (
             <div className="flex items-center gap-3">
-              {/* Model toggle */}
+              {/* Engine toggle (Gemini vs OpenAI) */}
               <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                 <button
-                  onClick={() => setImageModel('pro')}
+                  onClick={() => setImageEngine('gemini')}
                   className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
                   style={{
-                    background: imageModel === 'pro' ? `${accentColor}20` : 'transparent',
-                    color: imageModel === 'pro' ? accentColor : 'rgba(255,255,255,0.4)',
+                    background: imageEngine === 'gemini' ? `${accentColor}20` : 'transparent',
+                    color: imageEngine === 'gemini' ? accentColor : 'rgba(255,255,255,0.4)',
                   }}
+                  title="Google Gemini — faster, good for iteration"
                 >
-                  Pro
+                  Gemini
                 </button>
                 <button
-                  onClick={() => setImageModel('flash')}
+                  onClick={() => setImageEngine('openai')}
                   className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
                   style={{
-                    background: imageModel === 'flash' ? `${accentColor}20` : 'transparent',
-                    color: imageModel === 'flash' ? accentColor : 'rgba(255,255,255,0.4)',
+                    background: imageEngine === 'openai' ? `${accentColor}20` : 'transparent',
+                    color: imageEngine === 'openai' ? accentColor : 'rgba(255,255,255,0.4)',
                   }}
+                  title="OpenAI GPT-4o — better text rendering"
                 >
-                  Flash
+                  GPT-4o
                 </button>
               </div>
+
+              {/* Gemini model toggle (only shown when Gemini is selected) */}
+              {imageEngine === 'gemini' && (
+                <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <button
+                    onClick={() => setImageModel('pro')}
+                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                    style={{
+                      background: imageModel === 'pro' ? `${accentColor}20` : 'transparent',
+                      color: imageModel === 'pro' ? accentColor : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    Pro
+                  </button>
+                  <button
+                    onClick={() => setImageModel('flash')}
+                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                    style={{
+                      background: imageModel === 'flash' ? `${accentColor}20` : 'transparent',
+                      color: imageModel === 'flash' ? accentColor : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    Flash
+                  </button>
+                </div>
+              )}
+
+              {/* OpenAI model toggle (only shown when OpenAI is selected) */}
+              {imageEngine === 'openai' && (
+                <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <button
+                    onClick={() => setOpenaiModel('gpt-image-1')}
+                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                    style={{
+                      background: openaiModel === 'gpt-image-1' ? `${accentColor}20` : 'transparent',
+                      color: openaiModel === 'gpt-image-1' ? accentColor : 'rgba(255,255,255,0.4)',
+                    }}
+                    title="GPT Image 1 — best text rendering"
+                  >
+                    GPT-4o
+                  </button>
+                  <button
+                    onClick={() => setOpenaiModel('dall-e-3')}
+                    className="px-3 py-1.5 text-[11px] font-medium tracking-wide transition-all cursor-pointer"
+                    style={{
+                      background: openaiModel === 'dall-e-3' ? `${accentColor}20` : 'transparent',
+                      color: openaiModel === 'dall-e-3' ? accentColor : 'rgba(255,255,255,0.4)',
+                    }}
+                    title="DALL-E 3 — artistic style"
+                  >
+                    DALL-E 3
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={handleGenerateImages}

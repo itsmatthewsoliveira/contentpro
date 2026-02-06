@@ -44,9 +44,25 @@ export async function generateImage(
   }
 
   // Add text prompt — if we have reference images, prefix with style instruction
+  // CRITICAL: Do NOT copy colors or text from references — only visual design patterns
   if (referenceImages.length > 0) {
     parts.push({
-      text: `Study the design style in the reference images above. Match that exact style — the typography, layout, color treatment, design elements, and overall aesthetic. Now generate this composition:\n\n${prompt}`,
+      text: `Study the VISUAL DESIGN PATTERNS in the reference images above:
+- Learn the layout composition and element placement
+- Learn the typography style (font pairing, sizing, weight variation)
+- Learn the design elements (lines, shapes, cards, backgrounds)
+
+CRITICAL — DO NOT COPY FROM REFERENCES:
+- DO NOT use any text/words you see in the references
+- DO NOT use the colors from the references — use ONLY the colors specified in the prompt below
+- DO NOT use any language from the references — ENGLISH ONLY
+- DO NOT copy any logos or branding
+
+The references are for DESIGN INSPIRATION only, not content.
+
+Now generate this composition:
+
+${prompt}`,
     })
   } else {
     parts.push({ text: prompt })

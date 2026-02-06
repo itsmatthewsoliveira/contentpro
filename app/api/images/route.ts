@@ -3,7 +3,7 @@ import { generateImage, ImageModel } from '@/lib/nano-banana'
 import fs from 'fs'
 import path from 'path'
 
-// Cache loaded reference images per brand to avoid re-reading files
+// Cache loaded reference images per brand
 const referenceCache: Record<string, Array<{ data: string; mimeType: string }>> = {}
 
 function loadStyleReferences(brandSlug: string): Array<{ data: string; mimeType: string }> {
@@ -17,12 +17,11 @@ function loadStyleReferences(brandSlug: string): Array<{ data: string; mimeType:
 
     const files = fs.readdirSync(refDir)
       .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
-      .slice(0, 3) // Max 3 reference images to keep request size manageable
+      .slice(0, 3) // Max 3 reference images
 
     for (const file of files) {
       const filePath = path.join(refDir, file)
       const buffer = fs.readFileSync(filePath)
-      // Resize/compress would be ideal, but for now just limit count
       const ext = path.extname(file).toLowerCase()
       const mimeType = ext === '.png' ? 'image/png'
         : ext === '.webp' ? 'image/webp'
@@ -60,6 +59,7 @@ export async function POST(request: Request) {
     }
 
     // Load style reference images for this brand
+    // Anti-bleeding instructions are built into nano-banana.ts
     const referenceImages = brandSlug ? loadStyleReferences(brandSlug) : []
 
     const result = await generateImage(prompt, model || 'pro', referenceImages)

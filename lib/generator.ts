@@ -16,11 +16,6 @@ interface StyleAnalysis {
     accent?: string
   }
   typographyPatterns?: string[]
-  colorUsage?: {
-    backgrounds?: string[]
-    text?: string[]
-    accents?: string[]
-  }
   layoutPatterns?: string[]
   designElements?: string[]
   promptGuidance?: string
@@ -55,7 +50,7 @@ export async function generateBrief(
   const slideStructure = postTypeConfig?.structure || []
   const totalSlides = slideStructure.length || slideCount
 
-  const aiContent = await generateWithAI(brand, brandSlug, topic, postType, slideStructure, totalSlides)
+  const aiContent = await generateWithAI(brand, brandSlug, topic, slideStructure, totalSlides)
 
   return {
     meta: {
@@ -87,7 +82,6 @@ async function generateWithAI(
   brand: BrandConfig,
   brandSlug: string,
   topic: string,
-  postType: string,
   slideStructure: string[],
   totalSlides: number
 ) {
@@ -97,18 +91,16 @@ async function generateWithAI(
   }
 
   const client = new Anthropic({ apiKey })
-  const systemPrompt = buildSystemPrompt(brand, brandSlug, postType, slideStructure, totalSlides)
+  const systemPrompt = buildSystemPrompt(brand, brandSlug, slideStructure, totalSlides)
 
-  // Use Haiku for cost efficiency — it's 25x cheaper than Sonnet
-  // The detailed system prompt guides it well enough
   const response = await client.messages.create({
-    model: 'claude-haiku-3-5-20241022',
+    model: 'claude-sonnet-4-20250514',
     max_tokens: 6000,
     system: [
       {
         type: 'text',
         text: systemPrompt,
-        cache_control: { type: 'ephemeral' }, // Enable prompt caching — 90% cheaper on repeat calls
+        cache_control: { type: 'ephemeral' },
       },
     ],
     messages: [
@@ -132,102 +124,116 @@ async function generateWithAI(
 function buildSystemPrompt(
   brand: BrandConfig,
   brandSlug: string,
-  _postType: string,
   slideStructure: string[],
   totalSlides: number
 ): string {
   const slideList =
     slideStructure.length > 0
       ? slideStructure.map((s, i) => `  Slide ${i + 1}: ${s}`).join('\n')
-      : `  ${totalSlides} slides — you decide the structure`
-
-  const voiceSection = brand.contentVoice
-    ? `Voice: ${brand.contentVoice.tone}, ${brand.contentVoice.perspective}. CTA: ${brand.contentVoice.ctaStyle}`
-    : ''
+      : `  ${totalSlides} slides that flow logically from hook to CTA`
 
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
 
-  // Load style analysis if available — this gives us EXACT fonts and patterns from references
+  // Load style analysis - ONLY for visual design inspiration, NOT colors or language
   const styleAnalysis = loadStyleAnalysis(brandSlug)
-  const styleGuidance = styleAnalysis
-    ? `
-TYPOGRAPHY (from reference analysis):
-- Primary: ${styleAnalysis.fonts?.primary || 'Bold serif'}
-- Secondary: ${styleAnalysis.fonts?.secondary || 'Light sans-serif'}
-- Accent: ${styleAnalysis.fonts?.accent || 'None'}
-Patterns: ${styleAnalysis.typographyPatterns?.slice(0, 2).join('; ') || 'Mixed weights'}
-${styleAnalysis.promptGuidance || ''}`
+
+  // Extract ONLY visual design patterns, ignore any colors from references
+  const designInspiration = styleAnalysis
+    ? `VISUAL DESIGN INSPIRATION (from references):
+- Layout techniques: ${styleAnalysis.layoutPatterns?.join('; ') || 'Editorial, asymmetric'}
+- Typography style: ${styleAnalysis.typographyPatterns?.join('; ') || 'Mixed weights, serif + sans-serif'}
+- Design elements: ${styleAnalysis.designElements?.join('; ') || 'Accent lines, cards, pills'}
+NOTE: Use these VISUAL TECHNIQUES only. Ignore any colors or text from references.`
     : ''
 
+  // STRICT brand identity with explicit color requirements
   const brandIdentity = isServiceGrowth
-    ? `BRAND IDENTITY:
-- Name: ServiceGrowth AI
-- Colors: Dark #0D0D0D, Cyan #00D4FF, White #FFFFFF
-- Services: AI automation for service businesses, lead systems, CRM automation
-- Vibe: Tech-forward, insider knowledge, personal brand energy
-- Reference style: Oliver Merrick — glassmorphism cards, floating app icons, dark backgrounds
-- Logo: White text "ServiceGrowth" with cyan arrow/chevron mark — place in top-left corner`
-    : `BRAND IDENTITY:
-- Name: Caviar Pavers / Caviar Outdoor Designs
-- Colors: Brown #5C4033, Navy #1E3A5F, Gold #C9A227, Cream #F5F0E6
-- Services: Luxury paver installation, pool decks, patios, driveways, outdoor kitchens
-- Vibe: "SoHo meets Tulum" — premium outdoor living, editorial, magazine-quality
-- Location: Jacksonville, Florida
-- Logo: Gold sturgeon fish on navy background with "CAVIAR OUTDOOR DESIGNS" — place in top-left corner`
+    ? `=== BRAND: ServiceGrowth AI ===
+MANDATORY COLORS (use ONLY these):
+- Background: #0D0D0D (dark/black)
+- Accent/Highlights: #00D4FF (cyan)
+- Text: #FFFFFF (white)
+DO NOT use any other colors. Cyan is for accent words and highlights only.
 
-  const compositionGuidance = isServiceGrowth
-    ? `COMPOSITION GUIDE — Generate FULL slide image prompts. Gemini creates the ENTIRE slide: visuals, text, graphics, layout baked in.
+Business: AI automation for service businesses
+Vibe: Tech-forward, insider knowledge, premium SaaS aesthetic`
+    : `=== BRAND: Caviar Pavers ===
+MANDATORY COLORS (use ONLY these):
+- Backgrounds: #1E3A5F (navy) or #5C4033 (brown) or #F5F0E6 (cream)
+- Accent: #C9A227 (gold) — for lines, highlights, key words
+- Text: #F5F0E6 (cream) on dark, #1E3A5F (navy) on light
+DO NOT use any other colors. Gold is for accents only, not backgrounds.
 
-STYLE: Dark #0D0D0D backgrounds, cyan #00D4FF accents, glassmorphism cards, floating tech icons, 3D renders, cinematic lighting. Oliver Merrick aesthetic.
+Business: Luxury paver installation, outdoor living
+Location: Jacksonville, Florida
+Vibe: Premium editorial, magazine quality, aspirational`
 
-CAMERA: "Sony A7RV 35mm f/1.4" or "3D render, Octane quality, cinematic lighting"
+  // Creative direction
+  const creativeVision = isServiceGrowth
+    ? `CREATIVE DIRECTION:
+Create visuals that feel like premium tech marketing:
+- Sleek 3D renders, futuristic interfaces, AI concepts
+- Dark moody backgrounds with cyan neon accents
+- Studio-quality lighting, cinematic depth
+- Think: Apple meets sci-fi, polished and sophisticated`
+    : `CREATIVE DIRECTION:
+Create visuals that feel like luxury real estate marketing:
+- Beautiful outdoor spaces at golden hour
+- Editorial photography with warm color grading
+- That "enhanced reality" look — real but elevated
+- Think: Architectural Digest meets Brazilian social media`
 
-ELEMENTS: Glassmorphism cards (frosted blur), bold white headlines (cyan accent words), floating app icons, category pills, cyan bullet markers, swipe indicators, neon rim lighting.
-
-NO LOGO — logo overlaid separately. Keep top-left clean.
-
-PROMPT FORMULA: [Camera/Quality] + [Background #0D0D0D] + [Hero visual] + [Glassmorphism card with headline + subtext] + [Slide counter XX/XX] + "1080x1080px. NO LOGO."`
-    : `COMPOSITION GUIDE — Generate FULL slide image prompts. Gemini creates the ENTIRE slide: visuals, text, graphics, layout baked in.
-
-STYLE: Brazilian premium social media (Dani Bloom). Typography DOMINATES (40-60% of slide). Editorial magazine layouts, NOT stock photography.
-
-COLORS: Navy #1E3A5F, Brown #5C4033, Cream #F5F0E6, Gold #C9A227 accents. Warm, muted, sophisticated.
-
-TYPOGRAPHY: Mix Playfair Display (serif, bold) + Montserrat (sans, light) in SAME headline. Varying weights. Asymmetric positioning.
-
-CAMERA: "Sony A7RV 35mm f/1.4" or "Hasselblad medium format", golden hour, warm tones.
-
-LAYOUT: Top nav bar (category left, CAVIAR right), editorial photos integrated with text, thin gold accent lines, intentional negative space.
-
-NO LOGO — logo overlaid separately. Keep top-left clean.
-
-PROMPT FORMULA: [Background color/gradient] + [HUGE mixed-weight typography as hero] + [Editorial photo element] + [Gold accent lines] + [Top nav bar] + [Slide counter] + "1080x1080px. NO LOGO."`
-
-  return `Creative director for ${brand.name}. Create Instagram carousels where each slide is a fully designed image.
+  return `You are a creative director creating an Instagram carousel.
 
 ${brandIdentity}
-${styleGuidance}
-${voiceSection}
 
-VOICE: Confident, modern, no fluff. Headlines max 8 words, *accent* key words. No corporate clichés.
+${designInspiration}
 
-${compositionGuidance}
+${creativeVision}
 
-RULES:
-- VARY layouts (photo-dominant, text-dominant, split, asymmetric)
-- Include EXACT text in compositionPrompt
-- Slide counter "XX/${totalSlides}" in corner
-- End prompts with "1080x1080px. NO LOGO."
+=== CRITICAL RULES ===
+
+1. LANGUAGE: English ONLY. Never use Portuguese, Spanish, or any other language.
+
+2. COLORS: Use ONLY the brand colors listed above. Never copy colors from references.
+
+3. CONSISTENCY: The carousel should tell a STORY with logical flow:
+   - Slide 1: Hook (grab attention)
+   - Middle slides: Build the narrative, each adding value
+   - Final slide: CTA (clear action)
+   All slides should feel like they belong to the SAME carousel, not random posts.
+
+4. VISUAL STYLE: Learn the DESIGN TECHNIQUES from references (layouts, typography patterns, element placement) but apply them with THIS brand's colors.
+
+5. TEXT: All text in the images must be in English and use brand colors.
+
+=== COMPOSITION PROMPTS ===
+
+Each compositionPrompt should describe:
+- Background (using brand colors)
+- Main visual subject
+- Text content with EXACT placement (using brand colors for text)
+- Design elements
+- End with: "Brand colors only. English text. Studio quality. 1080x1080px. NO LOGO."
+
+=== CAROUSEL FLOW ===
 
 Structure: ${slideList}
+
+Create a cohesive carousel where each slide naturally leads to the next.
+
+=== OUTPUT FORMAT ===
+
+Headlines: Max 8 words. Mark *key words* for accent color.
+All text: English only.
 
 Return JSON:
 {
   "strategy": {"goal":"","targetAudience":"","hook":"","callToAction":""},
-  "slides": [{"purpose":"","headline":"*accent* words","subtext":"","bullets":[],"compositionPrompt":"FULL prompt for Gemini"}],
-  "caption": "with \\n breaks",
-  "hashtags": ["no # prefix"]
+  "slides": [{"headline":"*accent* words","subtext":"","compositionPrompt":"detailed prompt"}],
+  "caption": "English caption with \\n line breaks",
+  "hashtags": ["english","hashtags","only"]
 }
 
-JSON only, no markdown.`
+JSON only, no explanation.`
 }

@@ -2,8 +2,41 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
+import sharp from 'sharp'
 
 const BRANDS_DIR = path.join(process.cwd(), 'brands')
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024 // 4MB limit for Claude
+const MAX_DIMENSION = 1568 // Claude's recommended max dimension
+
+// Resize and compress image to fit within Claude's limits
+async function processImage(filePath: string): Promise<{ data: string; mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' }> {
+  const buffer = fs.readFileSync(filePath)
+
+  // Check if already small enough
+  if (buffer.length < MAX_IMAGE_SIZE) {
+    const ext = path.extname(filePath).toLowerCase()
+    const mediaType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    return { data: buffer.toString('base64'), mediaType: mediaType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' }
+  }
+
+  // Resize and compress with sharp
+  let quality = 85
+  let processed = await sharp(buffer)
+    .resize(MAX_DIMENSION, MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality })
+    .toBuffer()
+
+  // If still too large, reduce quality further
+  while (processed.length > MAX_IMAGE_SIZE && quality > 30) {
+    quality -= 10
+    processed = await sharp(buffer)
+      .resize(MAX_DIMENSION, MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality })
+      .toBuffer()
+  }
+
+  return { data: processed.toString('base64'), mediaType: 'image/jpeg' }
+}
 
 // Analyze style references and extract typography/design patterns
 export async function POST(request: NextRequest) {
@@ -32,26 +65,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No images in style-references folder' }, { status: 404 })
     }
 
-    const imageContents: Anthropic.ImageBlockParam[] = files.map((file) => {
+    // Process images (resize/compress if needed)
+    const imageContents: Anthropic.ImageBlockParam[] = []
+    for (const file of files) {
       const filePath = path.join(refDir, file)
-      const buffer = fs.readFileSync(filePath)
-      const ext = path.extname(file).toLowerCase()
-      const mediaType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-      return {
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: mediaType,
-          data: buffer.toString('base64'),
-        },
+      try {
+        const { data, mediaType } = await processImage(filePath)
+        imageContents.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data,
+          },
+        })
+      } catch (err) {
+        console.error(`Failed to process image ${file}:`, err)
+        // Skip this image and continue with others
       }
-    })
+    }
+
+    if (imageContents.length === 0) {
+      return NextResponse.json({ error: 'Failed to process any images' }, { status: 500 })
+    }
 
     const client = new Anthropic({ apiKey })
 
     // Use Haiku for cost efficiency — this is analysis, not generation
     const response = await client.messages.create({
-      model: 'claude-haiku-3-5-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [
         {
@@ -60,33 +102,36 @@ export async function POST(request: NextRequest) {
             ...imageContents,
             {
               type: 'text',
-              text: `Analyze these social media design references and extract the EXACT typography and design patterns. Be specific and technical.
+              text: `Analyze these social media design references for VISUAL DESIGN TECHNIQUES only.
+
+IMPORTANT:
+- Do NOT extract colors (we will use our own brand colors)
+- Do NOT extract any text content or language
+- ONLY extract the DESIGN PATTERNS and TECHNIQUES
 
 Return JSON with this structure:
 {
   "fonts": {
-    "primary": "Font name and weight (e.g., Playfair Display Bold)",
-    "secondary": "Font name and weight (e.g., Montserrat Light)",
-    "accent": "Any script/decorative font if present"
+    "primary": "Font style description (e.g., 'Bold serif like Playfair Display')",
+    "secondary": "Font style description (e.g., 'Light sans-serif like Montserrat')",
+    "accent": "Any script/decorative font style if present"
   },
   "typographyPatterns": [
-    "Pattern 1 — e.g., 'Large serif headline (80px) + thin sans-serif subhead (24px)'",
-    "Pattern 2 — e.g., 'Mixed weight in same line: bold keyword + light context'"
+    "Pattern 1 — e.g., 'Large bold headline + thin subhead below'",
+    "Pattern 2 — e.g., 'Mixed weight in same line: bold keyword + light context'",
+    "Pattern 3 — e.g., 'Stacked words vertically for impact'"
   ],
-  "colorUsage": {
-    "backgrounds": ["#hex values observed"],
-    "text": ["#hex values for text"],
-    "accents": ["#hex accent colors"]
-  },
   "layoutPatterns": [
-    "Layout 1 description",
-    "Layout 2 description"
+    "Layout 1 — e.g., 'Full-bleed photo with text in top-left corner'",
+    "Layout 2 — e.g., 'Split layout: photo left, solid color with text right'",
+    "Layout 3 — e.g., 'Typography-dominant with small photo accent'"
   ],
   "designElements": [
-    "Element 1 — e.g., 'Thin gold horizontal lines as dividers'",
-    "Element 2 — e.g., 'Top navigation bar with category left, brand right'"
+    "Element 1 — e.g., 'Thin horizontal accent lines as dividers'",
+    "Element 2 — e.g., 'Small category tag in top corner'",
+    "Element 3 — e.g., 'Rounded pill buttons for CTAs'"
   ],
-  "promptGuidance": "A 2-3 sentence summary of how to prompt an AI image generator to recreate this exact style. Be specific about fonts, sizes, weights, colors, and layout."
+  "promptGuidance": "2-3 sentences describing how to recreate this VISUAL STYLE (layouts, typography, elements) — do NOT mention specific colors, we will apply brand colors separately."
 }
 
 JSON only, no explanation.`,

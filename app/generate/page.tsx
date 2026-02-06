@@ -8,6 +8,8 @@ import TopicInput from '@/components/TopicInput'
 import CarouselPreview from '@/components/CarouselPreview'
 import SlideEditor from '@/components/SlideEditor'
 import ExportButton from '@/components/ExportButton'
+import StyleReferences from '@/components/StyleReferences'
+import StyleAnalyzer from '@/components/StyleAnalyzer'
 
 export default function GeneratePage() {
   return (
@@ -307,6 +309,12 @@ function GenerateWorkspace() {
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
           />
+        </div>
+
+        {/* Style references & analysis */}
+        <div className="mb-8 max-w-2xl animate-fade-in-delay-1 space-y-3">
+          <StyleReferences brandSlug={brandSlug} accentColor={accentColor} />
+          <StyleAnalyzer brandSlug={brandSlug} accentColor={accentColor} />
         </div>
 
         {/* Generation progress */}

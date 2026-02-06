@@ -1,10 +1,42 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { BrandConfig, Brief, Slide } from './types'
+import fs from 'fs'
+import path from 'path'
 
 interface GenerateOptions {
   slideCount?: number
   postType?: string
   imageSource?: string
+}
+
+interface StyleAnalysis {
+  fonts?: {
+    primary?: string
+    secondary?: string
+    accent?: string
+  }
+  typographyPatterns?: string[]
+  colorUsage?: {
+    backgrounds?: string[]
+    text?: string[]
+    accents?: string[]
+  }
+  layoutPatterns?: string[]
+  designElements?: string[]
+  promptGuidance?: string
+}
+
+// Load cached style analysis if available
+function loadStyleAnalysis(brandSlug: string): StyleAnalysis | null {
+  try {
+    const analysisPath = path.join(process.cwd(), 'brands', brandSlug, 'style-analysis.json')
+    if (fs.existsSync(analysisPath)) {
+      return JSON.parse(fs.readFileSync(analysisPath, 'utf-8'))
+    }
+  } catch {
+    // Ignore errors, return null
+  }
+  return null
 }
 
 export async function generateBrief(
@@ -67,10 +99,18 @@ async function generateWithAI(
   const client = new Anthropic({ apiKey })
   const systemPrompt = buildSystemPrompt(brand, brandSlug, postType, slideStructure, totalSlides)
 
+  // Use Haiku for cost efficiency — it's 25x cheaper than Sonnet
+  // The detailed system prompt guides it well enough
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 8192,
-    system: systemPrompt,
+    model: 'claude-haiku-3-5-20241022',
+    max_tokens: 6000,
+    system: [
+      {
+        type: 'text',
+        text: systemPrompt,
+        cache_control: { type: 'ephemeral' }, // Enable prompt caching — 90% cheaper on repeat calls
+      },
+    ],
     messages: [
       {
         role: 'user',
@@ -92,7 +132,7 @@ async function generateWithAI(
 function buildSystemPrompt(
   brand: BrandConfig,
   brandSlug: string,
-  postType: string,
+  _postType: string,
   slideStructure: string[],
   totalSlides: number
 ): string {
@@ -102,14 +142,22 @@ function buildSystemPrompt(
       : `  ${totalSlides} slides — you decide the structure`
 
   const voiceSection = brand.contentVoice
-    ? `Voice & Tone:
-- Tone: ${brand.contentVoice.tone}
-- Perspective: ${brand.contentVoice.perspective}
-- Hook patterns: ${brand.contentVoice.hooks.join(' | ')}
-- CTA style: ${brand.contentVoice.ctaStyle}`
+    ? `Voice: ${brand.contentVoice.tone}, ${brand.contentVoice.perspective}. CTA: ${brand.contentVoice.ctaStyle}`
     : ''
 
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
+
+  // Load style analysis if available — this gives us EXACT fonts and patterns from references
+  const styleAnalysis = loadStyleAnalysis(brandSlug)
+  const styleGuidance = styleAnalysis
+    ? `
+TYPOGRAPHY (from reference analysis):
+- Primary: ${styleAnalysis.fonts?.primary || 'Bold serif'}
+- Secondary: ${styleAnalysis.fonts?.secondary || 'Light sans-serif'}
+- Accent: ${styleAnalysis.fonts?.accent || 'None'}
+Patterns: ${styleAnalysis.typographyPatterns?.slice(0, 2).join('; ') || 'Mixed weights'}
+${styleAnalysis.promptGuidance || ''}`
+    : ''
 
   const brandIdentity = isServiceGrowth
     ? `BRAND IDENTITY:
@@ -128,139 +176,58 @@ function buildSystemPrompt(
 - Logo: Gold sturgeon fish on navy background with "CAVIAR OUTDOOR DESIGNS" — place in top-left corner`
 
   const compositionGuidance = isServiceGrowth
-    ? `COMPOSITION PROMPT GUIDE — You are a creative director powered by Filatov-level visual direction. You generate the FULL DESIGNED IMAGE prompt for each slide. Nano Banana (Gemini) will generate the ENTIRE slide as one image — visuals, text, graphics, layout, branding, EVERYTHING baked in.
+    ? `COMPOSITION GUIDE — Generate FULL slide image prompts. Gemini creates the ENTIRE slide: visuals, text, graphics, layout baked in.
 
-VISUAL STANDARD: NY FASHION meets SOFTWARE meets SERVICE BUSINESS. Beautiful, polished, magazine-worthy by DEFAULT.
+STYLE: Dark #0D0D0D backgrounds, cyan #00D4FF accents, glassmorphism cards, floating tech icons, 3D renders, cinematic lighting. Oliver Merrick aesthetic.
 
-CAMERA & QUALITY DIRECTION (include in every prompt):
-- Default: "Shot on Sony A7RV with 35mm f/1.4 lens" or "Canon R5 with 85mm f/1.4"
-- Lighting: Professional softboxes, dramatic studio lighting, cinematic rim lighting, neon accents
-- Quality: Tack sharp, rich colors, beautiful bokeh, magazine-worthy, retouched to commercial perfection
-- For 3D/CGI scenes: "Hyper-realistic 3D render, Octane quality, cinematic global illumination"
+CAMERA: "Sony A7RV 35mm f/1.4" or "3D render, Octane quality, cinematic lighting"
 
-DESIGN PATTERNS TO USE:
-- Glassmorphism cards with frosted glass blur effects on dark backgrounds
-- Bold white headlines with high contrast, cyan #00D4FF accent on key words
-- Floating app icons (ChatGPT, Notion, Slack, n8n, GoHighLevel) for tech context
-- Category tags at top of slides as pills/badges
-- Colored bullet point markers (cyan circles)
-- "Swipe" indicators on first slides
-- Dark/blurred backgrounds that create depth
-- 3D creative compositions: robots, neon portals, rocket ships, holographic displays
-- Cinematic lighting, dramatic shadows, dark moody atmosphere
-- Mixed media: 3D renders + photography + neon effects
-- Premium SaaS visual language: clean, modern, trustworthy, inspires confidence
+ELEMENTS: Glassmorphism cards (frosted blur), bold white headlines (cyan accent words), floating app icons, category pills, cyan bullet markers, swipe indicators, neon rim lighting.
 
-IMPORTANT — LOGO: Do NOT include any logo in the composition. The real logo will be overlaid separately. Leave the top-left area clean for logo placement.
+NO LOGO — logo overlaid separately. Keep top-left clean.
 
-MASTER FORMULA for each compositionPrompt:
-[CAMERA/RENDER QUALITY] + [LIGHTING SETUP] + [SCENE/BACKGROUND] + [HERO VISUAL SUBJECT] + [KEY VISUAL ELEMENTS & TEXTURES] + [BACKGROUND DEPTH] + [COLOR PALETTE/MOOD] + [TEXT ELEMENTS with exact wording, font, size, color, placement] + [DESIGN ELEMENTS: cards, pills, accents] + [SLIDE COUNTER] + [TECHNICAL QUALITY MARKERS]
+PROMPT FORMULA: [Camera/Quality] + [Background #0D0D0D] + [Hero visual] + [Glassmorphism card with headline + subtext] + [Slide counter XX/XX] + "1080x1080px. NO LOGO."`
+    : `COMPOSITION GUIDE — Generate FULL slide image prompts. Gemini creates the ENTIRE slide: visuals, text, graphics, layout baked in.
 
-EXAMPLE compositionPrompt:
-"Hyper-realistic 3D render with cinematic global illumination on dark moody background (#0D0D0D) with subtle cyan volumetric fog. Center composition: a photorealistic 3D robot version of Einstein sitting at a futuristic glass desk, holographic data screens floating around him, dramatic rim lighting with cyan (#00D4FF) neon edge glow. Tack-sharp details on metallic surfaces, beautiful light bokeh in background. Top-right: '01/07' slide counter in small white text. Lower third: a frosted glass card (glassmorphism, 15% white opacity, heavy blur backdrop, thin white border) containing bold white sans-serif headline 'How I Automate Lead Follow-Up' with 'Automate' in cyan #00D4FF, 48px equivalent. Below: smaller white text 16px 'The exact 5-step system I use to never miss a lead again.' Thin cyan accent line at bottom of card. Premium agency quality, Behance-level design, commercial retouching. Square 1:1 format, 1080x1080px. NO LOGO in the image."
+STYLE: Brazilian premium social media (Dani Bloom). Typography DOMINATES (40-60% of slide). Editorial magazine layouts, NOT stock photography.
 
-ANOTHER EXAMPLE:
-"Shot on Sony A7RV with 50mm f/1.2 lens, professional studio lighting with dramatic side key light. Dark moody studio (#0D0D0D) with volumetric cyan light beams. A sleek white robotic hand emerging from a laptop screen, reaching toward floating holographic app icons (Slack, ChatGPT, GoHighLevel) that orbit in a circle, each icon glowing with subtle neon rim light. Shallow depth of field, razor-sharp foreground, beautiful bokeh on background particles. Top-right: '03/07'. Center-bottom: glassmorphism card with bold white headline 'Your AI Sales Team' — 'AI' in cyan. Subtext: 'Working 24/7 so you don't have to.' Clean composition, commercial retouching quality. Square 1:1, 1080x1080px. NO LOGO in the image."`
-    : `COMPOSITION PROMPT GUIDE — You are a creative director creating Brazilian premium social media design. You generate the FULL DESIGNED IMAGE prompt for each slide. The AI image generator will create the ENTIRE slide as one image — visuals, text, graphics, layout, EVERYTHING baked in.
+COLORS: Navy #1E3A5F, Brown #5C4033, Cream #F5F0E6, Gold #C9A227 accents. Warm, muted, sophisticated.
 
-VISUAL STANDARD: Brazilian premium social media design (like Dani Bloom / Social Media HOF). NOT generic stock photography. Think editorial magazine layouts where TYPOGRAPHY DOMINATES and photography serves as a sophisticated backdrop.
+TYPOGRAPHY: Mix Playfair Display (serif, bold) + Montserrat (sans, light) in SAME headline. Varying weights. Asymmetric positioning.
 
-THIS IS WHAT THE STYLE LOOKS LIKE — study these patterns:
-- Deep navy (#1E3A5F) or warm brown (#5C4033) or cream (#F5F0E6) solid/gradient backgrounds
-- HUGE bold mixed-weight typography that takes up 40-60% of the slide area
-- Mix of serif AND sans-serif in the SAME headline — e.g., thin sans-serif "The art of" + bold serif "OUTDOOR LIVING"
-- Lifestyle editorial photography INTEGRATED with text — woman at desk, hands holding coffee, person working on laptop, close-up of materials
-- Text that WRAPS AROUND or OVERLAYS the photo subject — not just text box on top of photo
-- Varying font weights within one headline: some words BOLD/BLACK, others light/thin
-- Asymmetric text positioning — left-aligned bottom, right column, diagonal flow
-- A thin top navigation bar with "CATEGORY" on left and "BRAND NAME" on right
-- Clean minimal design elements — thin gold lines, simple geometric accents
-- Muted, sophisticated color palette — NOT bright, NOT saturated
-- Intentional negative space — some areas are breathing room, not filled
-- Professional color grading: warm tones, desaturated, editorial mood
+CAMERA: "Sony A7RV 35mm f/1.4" or "Hasselblad medium format", golden hour, warm tones.
 
-CAMERA & QUALITY DIRECTION (for photo elements):
-- Default: "Shot on Sony A7RV with 35mm f/1.4 lens" or "Hasselblad medium format"
-- Lighting: Warm studio softboxes, golden hour natural light, soft directional light
-- Quality: Tack sharp, rich warm tones, beautiful depth of field, magazine-worthy
+LAYOUT: Top nav bar (category left, CAVIAR right), editorial photos integrated with text, thin gold accent lines, intentional negative space.
 
-IMPORTANT — LOGO: Do NOT include any logo in the composition. The real logo will be overlaid separately. Leave the top-left area clean for logo placement.
+NO LOGO — logo overlaid separately. Keep top-left clean.
 
-COLOR PALETTE:
-- Backgrounds: Deep navy #1E3A5F, warm chocolate brown #5C4033, rich cream #F5F0E6
-- Text: Cream/off-white #F5F0E6 on dark backgrounds, navy #1E3A5F on light backgrounds
-- Accents: Gold #C9A227 for highlight words, thin accent lines
-- Overall mood: warm, muted, sophisticated — NOT bright or flashy
+PROMPT FORMULA: [Background color/gradient] + [HUGE mixed-weight typography as hero] + [Editorial photo element] + [Gold accent lines] + [Top nav bar] + [Slide counter] + "1080x1080px. NO LOGO."`
 
-MASTER FORMULA for each compositionPrompt:
-[BACKGROUND: solid color, gradient, or editorial photo] + [TYPOGRAPHY: exact text, mixed fonts/weights, sizes, placement — this is the HERO element] + [PHOTO ELEMENT: lifestyle editorial photo integrated with layout, if applicable] + [DESIGN ELEMENTS: thin lines, navigation bar, geometric accents] + [COLOR GRADING: warm, muted, editorial] + [SLIDE COUNTER] + [QUALITY: Brazilian premium social media design]
-
-EXAMPLE compositionPrompt:
-"Deep navy background (#1E3A5F) with subtle warm gradient. Top bar: thin line with 'OUTDOOR LIVING' left-aligned and 'CAVIAR' right-aligned in tiny cream uppercase tracking. Right side: editorial photograph of a luxury completed paver patio at golden hour, shot on Sony A7RV with 35mm f/1.4 — warm color grading, shallow depth of field, tack-sharp stone textures. The photo takes up the right 55% of the composition. Left side: large mixed-weight typography — thin sans-serif (Montserrat Light, cream) 'The art of' at 28px, then bold serif (Playfair Display Black, cream) 'OUTDOOR' at 64px, then 'LIVING' at 64px below it. A thin gold (#C9A227) horizontal accent line between the heading and a small cream body text at 14px: 'Transforming Jacksonville backyards into luxury retreats.' Bottom-right: '01/07' in small gold text. Brazilian premium social media design quality. Square 1:1 format, 1080x1080px. NO LOGO in the image."
-
-ANOTHER EXAMPLE:
-"Warm brown background (#5C4033) full bleed. Center-left: editorial photo of a craftsman's hands laying travertine pavers, shot on Sony A7RV 85mm f/1.4, extreme shallow depth of field, golden hour backlighting creating rim light on the hands. The photo is positioned center-left, slightly overlapping the text area. Right side, overlapping the photo edge: HUGE bold serif text (Playfair Display, cream #F5F0E6) 'Every DETAIL matters.' — 'DETAIL' in extra-bold 72px, rest in light 36px. Below: thin gold line, then small sans-serif 'From the first paver to the final seal.' 14px cream. Top bar: 'CRAFTSMANSHIP' left, 'CAVIAR' right, tiny uppercase. Bottom-right: '03/07'. Muted warm editorial color grading. Square 1:1, 1080x1080px. NO LOGO in the image."
-
-ANOTHER EXAMPLE:
-"Rich cream background (#F5F0E6). Asymmetric layout. Top-left area: GIANT serif headline (Playfair Display, navy #1E3A5F) spanning 3 lines — 'Seu espaço' in thin weight 32px, 'MERECE' in bold 80px, 'mais.' in italic 40px. The text takes up the top-left 60% of the composition. Bottom-right: editorial photo of a stunning outdoor kitchen setup at dusk, warm amber uplighting on stone columns, shot on Hasselblad medium format. Photo bleeds off the right and bottom edges. A thin gold accent line separates text from photo area. Small navy body text below headline: 'Premium hardscaping for the home that deserves it.' 14px Montserrat. Bottom: '05/07' in gold. Sophisticated, editorial, magazine-quality. Square 1:1, 1080x1080px. NO LOGO in the image."`
-
-  return `You are a creative director AND content strategist for ${brand.name}. You create Instagram carousels where EVERY SLIDE is a fully designed image — not just text on a background, but a complete premium composition with visuals, typography, design elements, and branding ALL baked into one image.
+  return `Creative director for ${brand.name}. Create Instagram carousels where each slide is a fully designed image.
 
 ${brandIdentity}
-
+${styleGuidance}
 ${voiceSection}
 
-VOICE RULES — Write like a founder who's winning:
-- Confident, modern, clear, no fluff, human
-- NEVER use: "In today's world", "Unlock", "Revolutionary", "Discover", "Game-changer", "Seamless", corporate filler
-- Headlines: punchy, scannable, max 8 words. Wrap 1-2 KEY WORDS in *asterisks* for accent color
-- Subtext: 1-2 sentences of supporting detail — benefit-first, direct response logic
-- Bullets: short, benefit-driven phrases (3-5 per slide where appropriate)
-- Every slide has intention — no noise, no filler slides
+VOICE: Confident, modern, no fluff. Headlines max 8 words, *accent* key words. No corporate clichés.
 
 ${compositionGuidance}
 
-CRITICAL RULES FOR compositionPrompt:
-- Each prompt generates ONE COMPLETE DESIGNED SLIDE — background, visuals, text, design elements
-- NEVER include a logo — the real logo is overlaid separately after generation
-- End every prompt with "NO LOGO in the image."
-- VARY the compositions — don't repeat the same layout every slide. Mix photo-dominant, text-dominant, split, centered, asymmetric
-- Each composition should feel like a premium design agency made it
-- TYPOGRAPHY IS THE HERO — text should be large, bold, mixed-weight, intentionally placed
-- Specify font size, weight, color, and placement clearly for all text
-- Include the EXACT text that should appear in the image (headline, subtext, bullets)
-- Include slide counter (e.g. "01/07") in a corner
-- Think Brazilian luxury social media design aesthetic — bold, editorial, sophisticated
-- Specify "Square 1:1 format, 1080x1080px" in every prompt
-- NEVER make generic or stock-photo looking content — this is DESIGN, not photography
+RULES:
+- VARY layouts (photo-dominant, text-dominant, split, asymmetric)
+- Include EXACT text in compositionPrompt
+- Slide counter "XX/${totalSlides}" in corner
+- End prompts with "1080x1080px. NO LOGO."
 
-Slide Structure for this "${postType}" post:
-${slideList}
+Structure: ${slideList}
 
-You MUST return valid JSON matching this exact schema:
+Return JSON:
 {
-  "strategy": {
-    "goal": "string — what this post achieves",
-    "targetAudience": "string — who this is for",
-    "hook": "string — the opening hook",
-    "callToAction": "string — the closing CTA"
-  },
-  "slides": [
-    {
-      "purpose": "string — role of this slide",
-      "headline": "string — with *accent* words marked",
-      "subtext": "string — supporting copy",
-      "bullets": ["string array — optional, include where appropriate"],
-      "cta": "string or null — only for CTA slides",
-      "elements": ["string array — visual elements in this composition"],
-      "imageDescription": "string — brief description of the visual concept",
-      "compositionPrompt": "string — DETAILED Nano Banana prompt for the FULL designed slide image. Include every visual element, text placement, typography direction, brand elements, and creative concept. This prompt will be sent directly to the AI image generator to create the COMPLETE slide.",
-      "layout": "string — composition style: hero-visual, glassmorphism-card, editorial-overlay, split-layout, centered-cta, full-bleed, icon-grid, etc."
-    }
-  ],
-  "caption": "string — Instagram caption with line breaks as \\n",
-  "hashtags": ["string array — 15-20 relevant hashtags without # prefix"]
+  "strategy": {"goal":"","targetAudience":"","hook":"","callToAction":""},
+  "slides": [{"purpose":"","headline":"*accent* words","subtext":"","bullets":[],"compositionPrompt":"FULL prompt for Gemini"}],
+  "caption": "with \\n breaks",
+  "hashtags": ["no # prefix"]
 }
 
-Return ONLY the JSON object. No explanation, no markdown fences.`
+JSON only, no markdown.`
 }

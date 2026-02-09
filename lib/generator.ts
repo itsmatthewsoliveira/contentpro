@@ -85,10 +85,10 @@ function loadStyleAnalysis(brandSlug: string): StyleAnalysis | null {
     return {
       fonts: raw.fonts && typeof raw.fonts === 'object'
         ? {
-            primary: asText((raw.fonts as Record<string, unknown>).primary),
-            secondary: asText((raw.fonts as Record<string, unknown>).secondary),
-            accent: asText((raw.fonts as Record<string, unknown>).accent),
-          }
+          primary: asText((raw.fonts as Record<string, unknown>).primary),
+          secondary: asText((raw.fonts as Record<string, unknown>).secondary),
+          accent: asText((raw.fonts as Record<string, unknown>).accent),
+        }
         : undefined,
       typographyPatterns: cleanPatternList(asStringArray(raw.typographyPatterns, 8), brandSlug),
       layoutPatterns: cleanPatternList(asStringArray(raw.layoutPatterns, 8), brandSlug),
@@ -100,28 +100,17 @@ function loadStyleAnalysis(brandSlug: string): StyleAnalysis | null {
   }
 }
 
-function defaultTheme(brandSlug: string): CarouselTheme {
-  if (brandSlug === 'servicegrowth-ai') {
-    return {
-      artDirection: 'Dark premium tech editorial with restrained cyan accents',
-      lighting: 'Cinematic low-key lighting with controlled glow edges',
-      framing: 'Asymmetric grid with clear text hierarchy and breathing room',
-      textureMotif: 'Glass, brushed metal, subtle depth layers',
-      consistencyAnchor: 'Same camera language and contrast profile across every slide',
-    }
+// function defaultTheme removed - now using dynamic fallback in normalizeTheme
+
+function normalizeTheme(raw: unknown, brandSlug: string, visualStyle?: any): CarouselTheme {
+  const fallback = {
+    artDirection: visualStyle?.aesthetic || 'Clean professional layout',
+    lighting: 'Balanced professional lighting',
+    framing: 'Rule of thirds, clear hierarchy',
+    textureMotif: 'Clean surfaces',
+    consistencyAnchor: 'Consistent brand colors and typography'
   }
 
-  return {
-    artDirection: 'Luxury architectural editorial with aspirational outdoor lifestyle scenes',
-    lighting: 'Golden-hour warmth with controlled highlights and soft shadows',
-    framing: 'Magazine composition with intentional negative space and elegant alignment',
-    textureMotif: 'Natural stone, refined materials, premium environmental details',
-    consistencyAnchor: 'Consistent grading and composition rhythm across all slides',
-  }
-}
-
-function normalizeTheme(raw: unknown, brandSlug: string): CarouselTheme {
-  const fallback = defaultTheme(brandSlug)
   if (!raw || typeof raw !== 'object') return fallback
 
   const record = raw as Record<string, unknown>
@@ -134,42 +123,43 @@ function normalizeTheme(raw: unknown, brandSlug: string): CarouselTheme {
   }
 }
 
-function getBrandPromptRules(brandSlug: string): { identity: string; negatives: string } {
-  if (brandSlug === 'servicegrowth-ai') {
-    return {
-      identity: `BRAND LOCK: ServiceGrowth AI
-- Colors: #0D0D0D background, #00D4FF accent, #FFFFFF text only
-- Typography: modern sans-serif only, clean geometric hierarchy
-- Aesthetic: premium tech editorial, dark, cinematic, precise`,
-      negatives: `NEGATIVE RULES:
-- No script/cursive/serif lettering
-- No pink, maroon, warm luxury palette, or ornate design language
-- No generic stock scenes (head-in-hands office person, random hologram, handshake cliches)
-- English text only, perfect spelling`,
-    }
-  }
+function getBrandPromptRules(
+  brand: BrandConfig
+): { identity: string; negatives: string } {
+  // Build identity string from generic config
+  const colorList = Object.entries(brand.colors.primary || {})
+    .map(([key, val]) => `- ${key}: ${val}`)
+    .join('\n')
 
-  return {
-    identity: `BRAND LOCK: Caviar Pavers
-- Colors: #1E3A5F navy, #5C4033 brown, #C9A227 gold, #F5F0E6 cream only
-- Typography: elegant serif headline + clean sans-serif support
-- Aesthetic: premium architectural editorial, luxury outdoor lifestyle`,
-    negatives: `NEGATIVE RULES:
-- No neon cyber/tech style or glassmorphism UI language
-- No random stock construction imagery
-- English text only, perfect spelling`,
-  }
+  const aesthetic = brand.visualStyle?.aesthetic || 'Professional and clean'
+  const negativePrompt = brand.visualStyle?.negativePrompt || 'No low-quality stock images'
+
+  const identity = `=== BRAND: ${brand.name} ===
+COLORS:
+${colorList}
+
+VISUAL MANDATE:
+- Aesthetic: ${aesthetic}
+- Headline Font: ${brand.typography.headlineFont}
+- Body Font: ${brand.typography.bodyFont}
+`
+
+  const negatives = `NEGATIVE RULES:
+${negativePrompt.split('. ').map(rule => `- ${rule.trim()}`).join('\n')}
+`
+
+  return { identity, negatives }
 }
 
 function enrichCompositionPrompt(
-  brandSlug: string,
+  brand: BrandConfig,
   basePrompt: string,
   theme: CarouselTheme,
   slide: Partial<Slide>,
   slideNumber: number,
   totalSlides: number
 ): string {
-  const { identity, negatives } = getBrandPromptRules(brandSlug)
+  const { identity, negatives } = getBrandPromptRules(brand)
   const headline = asText(slide.headline)
   const subtext = asText(slide.subtext)
 
@@ -195,13 +185,66 @@ EXECUTION QUALITY BAR:
 - Leave top-left 60x60 clear for logo overlay
 - Professional design output, not generic AI stock style
 - No logo, no watermark
+- ${brand.visualStyle?.imageGuidance || 'High quality professional look'}
 
 ${negatives}`
 }
 
-function normalizeAIContent(raw: unknown, brandSlug: string, totalSlides: number): AIContent {
+// Generate a creative brief that gives direction but leaves room for visual creativity
+// Generate a creative brief that gives direction but leaves room for visual creativity
+function generateCreativeBrief(
+  brand: BrandConfig,
+  slide: Partial<Slide>,
+  slideNumber: number,
+  totalSlides: number,
+  theme: CarouselTheme
+): string {
+  const headline = asText(slide.headline).replace(/\*/g, '')
+  const subtext = asText(slide.subtext)
+  const purpose = asText(slide.purpose)
+  const imageDesc = asText(slide.imageDescription)
+
+  // Build a creative brief that describes WHAT to create, not HOW
+  const parts: string[] = []
+
+  // Slide role in the story
+  if (slideNumber === 1) {
+    parts.push('Opening hook slide — grab attention, create intrigue.')
+  } else if (slideNumber === totalSlides) {
+    parts.push('Final CTA slide — clear call to action, confident energy.')
+  } else {
+    parts.push(`Slide ${slideNumber}/${totalSlides} — ${purpose.toLowerCase()}.`)
+  }
+
+  // The message to convey
+  parts.push(`Message: "${headline}"`)
+  if (subtext) {
+    parts.push(`Supporting: "${subtext}"`)
+  }
+
+  // Visual concept from AI (if provided)
+  if (imageDesc) {
+    parts.push(`Visual concept: ${imageDesc}`)
+  }
+
+  // Brand-specific creative direction
+  if (brand.visualStyle?.aesthetic) {
+    parts.push(`Mood: ${brand.visualStyle.aesthetic}`)
+  }
+
+  if (brand.visualStyle?.imageGuidance) {
+    parts.push(`Visual Guidance: ${brand.visualStyle.imageGuidance}`)
+  }
+
+  // Theme consistency
+  parts.push(`Art direction: ${theme.artDirection}`)
+
+  return parts.join('\n')
+}
+
+function normalizeAIContent(raw: unknown, brand: BrandConfig, totalSlides: number): AIContent {
   const record = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
-  const theme = normalizeTheme(record.carouselTheme, brandSlug)
+  const theme = normalizeTheme(record.carouselTheme, brand.name, brand.visualStyle)
 
   const strategyRaw = record.strategy && typeof record.strategy === 'object'
     ? (record.strategy as Record<string, unknown>)
@@ -231,20 +274,16 @@ function normalizeAIContent(raw: unknown, brandSlug: string, totalSlides: number
       elements: asStringArray(candidate.elements, 8),
       imageDescription: asText(candidate.imageDescription),
       layout: asText(candidate.layout, 'full-composition'),
-      compositionPrompt: asText(candidate.compositionPrompt),
+      compositionPrompt: '', // Will be filled below
     }
 
-    const basePrompt = partial.compositionPrompt
-      || partial.imageDescription
-      || `${partial.headline}. ${partial.subtext}`
-
-    partial.compositionPrompt = enrichCompositionPrompt(
-      brandSlug,
-      basePrompt,
-      theme,
+    // Auto-generate a creative brief for the image
+    partial.compositionPrompt = generateCreativeBrief(
+      brand,
       partial,
       i + 1,
-      totalSlides
+      totalSlides,
+      theme
     )
 
     slides.push(partial)
@@ -343,7 +382,7 @@ async function generateWithAI(
 
   try {
     const parsed = JSON.parse(jsonStr)
-    return normalizeAIContent(parsed, brandSlug, totalSlides)
+    return normalizeAIContent(parsed, brand, totalSlides)
   } catch (err) {
     throw new Error(`Failed to parse AI response as JSON: ${(err as Error).message}`)
   }
@@ -357,58 +396,24 @@ function buildSystemPrompt(
 ): string {
   const slideList =
     slideStructure.length > 0
-      ? slideStructure.map((s, i) => `  Slide ${i + 1}: ${s}`).join('\n')
-      : `  ${totalSlides} slides that flow logically from hook to CTA`
-
-  const isServiceGrowth = brandSlug === 'servicegrowth-ai'
   const styleAnalysis = loadStyleAnalysis(brandSlug)
 
   const layoutHints = styleAnalysis?.layoutPatterns?.length
     ? styleAnalysis.layoutPatterns.join('; ')
-    : 'Asymmetric editorial layouts with clear hierarchy'
+    : brand.visualStyle?.layouts?.join('; ') || 'Asymmetric editorial layouts'
+
   const typeHints = styleAnalysis?.typographyPatterns?.length
     ? styleAnalysis.typographyPatterns.join('; ')
-    : isServiceGrowth
-      ? 'Bold sans-serif hierarchy, clean spacing, no decorative scripts'
-      : 'Serif-led headline hierarchy with elegant sans-serif support'
+    : `${brand.typography.headlineFont} headings with ${brand.typography.bodyFont} body`
+
   const designHints = styleAnalysis?.designElements?.length
     ? styleAnalysis.designElements.join('; ')
-    : 'Accent dividers, intentional whitespace, restrained decorative elements'
+    : brand.visualStyle?.elements?.join('; ') || 'Clean professional design'
 
-  const brandIdentity = isServiceGrowth
-    ? `=== BRAND: ServiceGrowth AI ===
-MANDATORY COLORS (ONLY these):
-- Background: #0D0D0D
-- Accent: #00D4FF
-- Text: #FFFFFF
+  const { identity, negatives } = getBrandPromptRules(brand)
 
-Visual mandate:
-- Premium tech editorial
-- Modern sans-serif typography only
-- Dark cinematic mood with disciplined composition`
-    : `=== BRAND: Caviar Pavers ===
-MANDATORY COLORS (ONLY these):
-- Navy: #1E3A5F
-- Brown: #5C4033
-- Gold: #C9A227
-- Cream: #F5F0E6
-
-Visual mandate:
-- Premium architectural editorial
-- Elegant serif + sans-serif pairing
-- Luxury outdoor lifestyle composition`
-
-  const negativeRules = isServiceGrowth
-    ? `NEGATIVE RULES:
-- No script/cursive/serif lettering
-- No pink, maroon, burgundy, or warm luxury palette bleed
-- No Portuguese/Spanish/non-English text
-- No generic AI stock scenes`
-    : `NEGATIVE RULES:
-- No neon cyber/tech motifs
-- No glassmorphism UI language
-- No Portuguese/Spanish/non-English text
-- No generic stock contractor look`
+  const brandIdentity = identity
+  const negativeRules = negatives
 
   return `You are a world-class social creative director producing an Instagram carousel.
 
@@ -421,13 +426,27 @@ VISUAL REFERENCE EXTRACTION (use only these design patterns, not colors/text fro
 
 ${negativeRules}
 
+COPYWRITING RULES (CRITICAL):
+1. Write like a top copywriter, not a corporate robot
+2. Headlines must be PUNCHY and SPECIFIC — not vague summaries
+3. Use concrete numbers, outcomes, and specifics when possible
+4. Each headline should make someone STOP scrolling
+5. Subtext should add value, not repeat the headline
+6. Bullets should be scannable insights, not filler
+7. NEVER use: "In today's world", "Unlock", "Revolutionary", "Discover", "Game-changer", "Seamless", "Leverage"
+8. Write like you're talking to a smart friend, not a boardroom
+
+HEADLINE EXAMPLES:
+- BAD: "The Framework That Works" (vague, boring)
+- GOOD: "I Saved 14 Hours a Week With This" (specific, outcome-focused)
+- BAD: "Understanding Your Audience" (generic)
+- GOOD: "Your Clients Don't Want What You're Selling" (provocative, hook)
+
 GLOBAL REQUIREMENTS:
 1. ENGLISH ONLY. Perfect spelling.
 2. Every slide must feel like the same campaign, not random outputs.
 3. Headlines max 8 words, mark accent words with *asterisks*.
-4. compositionPrompt must be specific and production-quality.
-5. Include explicit placement language, visual hierarchy, and typography intent.
-6. End each composition prompt with: "1080x1080. English only. No logo."
+4. For imageDescription, write a brief visual concept (not layout instructions)
 
 CAROUSEL STRUCTURE:
 ${slideList}

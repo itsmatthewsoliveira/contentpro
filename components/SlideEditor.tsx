@@ -17,9 +17,36 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
   const accentColor = isServiceGrowth
     ? brand.colors.accent?.cyan || '#00D4FF'
     : brand.colors.accent?.gold || '#C9A227'
-
-  const [showPrompt, setShowPrompt] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
+  const [isRefining, setIsRefining] = useState(false)
+
+  const handleRefinePrompt = async () => {
+    if (!slide.compositionPrompt?.trim()) return
+    setIsRefining(true)
+    try {
+      const res = await fetch('/api/refine-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userPrompt: slide.compositionPrompt,
+          brandSlug,
+          slideContext: {
+            headline: slide.headline,
+            subtext: slide.subtext,
+            purpose: slide.purpose,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (data.refinedPrompt) {
+        onUpdate({ ...slide, compositionPrompt: data.refinedPrompt })
+      }
+    } catch (err) {
+      console.error('Refine prompt failed:', err)
+    } finally {
+      setIsRefining(false)
+    }
+  }
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -194,28 +221,47 @@ export default function SlideEditor({ slide, brand, brandSlug, onUpdate, onDropI
           </div>
         )}
 
-        {/* Composition Prompt (collapsible) */}
-        <div className="pt-2 border-t border-white/[0.04]">
-          <button
-            onClick={() => setShowPrompt(!showPrompt)}
-            className="text-[11px] text-white/30 hover:text-white/50 transition-colors cursor-pointer"
-          >
-            {showPrompt ? '▾' : '▸'} Composition Prompt
-          </button>
-          {showPrompt && (
-            <textarea
-              value={slide.compositionPrompt || ''}
-              onChange={(e) => onUpdate({ ...slide, compositionPrompt: e.target.value })}
-              rows={8}
-              className="w-full mt-2 px-3 py-2 rounded-lg text-xs text-white/60 focus:outline-none transition-colors resize-none"
+        {/* Composition Prompt - ALWAYS VISIBLE */}
+        <div
+          className="mt-4 p-3 rounded-xl"
+          style={{
+            background: `${accentColor}08`,
+            border: `1px solid ${accentColor}20`,
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[11px] font-medium tracking-wide" style={{ color: accentColor }}>
+              Image Prompt (write your own)
+            </label>
+            <button
+              onClick={handleRefinePrompt}
+              disabled={isRefining || !slide.compositionPrompt?.trim()}
+              className="px-2.5 py-1 rounded-md text-[10px] font-medium transition-all disabled:opacity-30 cursor-pointer"
               style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.04)',
+                background: isRefining ? `${accentColor}30` : `${accentColor}20`,
+                color: accentColor,
+                border: `1px solid ${accentColor}30`,
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}22` }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)' }}
-            />
-          )}
+            >
+              {isRefining ? 'Refining...' : 'Refine with Claude'}
+            </button>
+          </div>
+          <p className="text-[10px] text-white/30 mb-2">
+            Describe what you want — Claude will refine it for the image model
+          </p>
+          <textarea
+            value={slide.compositionPrompt || ''}
+            onChange={(e) => onUpdate({ ...slide, compositionPrompt: e.target.value })}
+            rows={6}
+            placeholder="e.g., Person sitting in chair thinking, thought cloud above head showing a luxury outdoor patio with pergola. Navy and gold gradient colors. Clean cream background. Bold headline at top."
+            className="w-full px-3 py-2 rounded-lg text-sm text-white/80 placeholder-white/20 focus:outline-none transition-colors resize-none"
+            style={{
+              background: 'rgba(0,0,0,0.3)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = `${accentColor}44` }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+          />
         </div>
 
         {/* Image info */}

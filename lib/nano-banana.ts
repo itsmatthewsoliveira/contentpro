@@ -19,76 +19,103 @@ export interface ReferenceImage {
 }
 
 interface GenerateImageOptions {
-  brandSlug?: string
+  brandConfig?: any
   referenceImages?: ReferenceImage[]
+  customPrompt?: string
+  topic?: string
+  slideHeadline?: string
 }
 
-function getBrandStyleEnvelope(brandSlug?: string): string {
-  if (brandSlug === 'servicegrowth-ai') {
-    return `STYLE LOCK — ServiceGrowth AI:
-- Use ONLY these colors: #0D0D0D (background), #00D4FF (cyan accent), #FFFFFF (text)
-- Visual language: premium tech editorial, cinematic depth, glass surfaces, clean grid alignment
-- Typography style: modern sans-serif only, bold geometric hierarchy, no decorative lettering
-- Think: Apple keynote meets sci-fi, polished and sophisticated
-
-NEGATIVE CONSTRAINTS:
-- Do NOT use script fonts, cursive, serif/calligraphy, pink, maroon, or warm luxury palettes
-- Do NOT use Portuguese or any non-English text
-- Do NOT generate generic stock tropes (stressed office person, handshake, hologram woman, random dashboard clichés)`
+// Brand context - what the business is about
+// Brand context - what the business is about
+function getBrandContext(brandConfig?: any): { colors: string; business: string } {
+  if (!brandConfig) {
+    // Fallback if no config passed
+    return {
+      colors: 'Use professional high-contrast colors.',
+      business: 'Professional Service Business'
+    }
   }
 
-  if (brandSlug === 'caviar-pavers') {
-    return `STYLE LOCK — Caviar Pavers:
-- Use ONLY these colors: #1E3A5F (navy), #5C4033 (brown), #C9A227 (gold), #F5F0E6 (cream)
-- Visual language: architectural luxury editorial, magazine-quality composition, intentional negative space
-- Typography style: elegant serif headline + clean sans-serif support with precise spacing
-- Think: Architectural Digest meets Brazilian premium social media
+  const colorList = Object.entries(brandConfig.colors.primary || {})
+    .map(([key, val]) => `- ${key}: ${val}`)
+    .join('\n')
 
-NEGATIVE CONSTRAINTS:
-- Do NOT use neon cyberpunk effects, glassmorphism UI, or tech startup motifs
-- Do NOT use Portuguese or any non-English text
-- Do NOT generate generic stock construction scenes or low-end brochure look`
+  return {
+    colors: colorList,
+    business: `${brandConfig.name} - ${brandConfig.tagline}
+Content should show: ${brandConfig.visualStyle?.aesthetic || 'Professional imagery'}`
   }
-
-  return `STYLE LOCK:
-- Keep a premium editorial look with tight composition and clear hierarchy
-- English only, precise typography, no generic stock clichés`
 }
 
-function buildFinalPrompt(prompt: string, brandSlug?: string, hasReferences: boolean = false): string {
-  const styleEnvelope = getBrandStyleEnvelope(brandSlug)
+// Build prompt with topic context
+function buildFinalPrompt(
+  userPrompt: string,
+  hasReferences: boolean,
+  brandConfig?: any,
+  customDirection?: string,
+  topic?: string,
+  slideHeadline?: string
+): string {
+  const direction = customDirection?.trim() || userPrompt?.trim() || ''
+  const { colors, business } = getBrandContext(brandConfig)
 
-  // Anti-bleeding instructions when reference images are included
-  const referenceInstructions = hasReferences ? `
-REFERENCE IMAGE INSTRUCTIONS:
-Study the VISUAL DESIGN PATTERNS in the reference images:
-- Learn layout composition and element placement
-- Learn typography style (font pairing, sizing, weight variation)
-- Learn design elements (lines, shapes, cards, backgrounds)
+  const contentContext = topic
+    ? `CONTENT TOPIC: ${topic}${slideHeadline ? `\nThis slide's message: "${slideHeadline}"` : ''}`
+    : ''
 
-CRITICAL — DO NOT COPY FROM REFERENCES:
-- DO NOT use any text/words you see in the references
-- DO NOT use the colors from the references — use ONLY the brand colors above
-- DO NOT use any language from the references — ENGLISH ONLY
-- DO NOT copy any logos or branding from references
+  const imageGuidance = brandConfig?.visualStyle?.imageGuidance
+    ? `GUIDANCE: ${brandConfig.visualStyle.imageGuidance}`
+    : ''
 
-The references are for DESIGN INSPIRATION only, not content.
-` : ''
+  const negativeContext = brandConfig?.visualStyle?.negativePrompt
+    ? `NEGATIVE PROMPT: ${brandConfig.visualStyle.negativePrompt}`
+    : ''
 
-  return `${styleEnvelope}
-${referenceInstructions}
-EXECUTION RULES:
-- 1080x1080 Instagram slide composition
-- Leave top-left safe zone (60x60px) clear for logo overlay
-- Text must be perfectly spelled in English and visually polished
-- No logo rendering, no watermark
-- Avoid "AI look": no mushy typography, no random icon clutter, no overdone glow
+  if (hasReferences) {
+    return `COPY THE VISUAL STYLE of the reference images, but create NEW CONTENT about the brand.
 
-COMPOSITION BRIEF:
-${prompt}
+CRITICAL: Do NOT copy the text or subject matter from references. Only copy the DESIGN STYLE.
 
-FINAL QUALITY BAR:
-Professional social media design output, coherent and art-directed, not generic AI stock.`
+${business}
+
+${contentContext}
+
+Match from references (STYLE ONLY):
+- Layout composition and visual hierarchy
+- Typography style and font treatment
+- Design elements and aesthetic
+
+Use these brand colors:
+${colors}
+
+${imageGuidance}
+
+ENGLISH ONLY. No Portuguese or Spanish.
+
+${direction ? direction : 'Create a premium, high-quality image about this brand/topic.'}
+
+${negativeContext}
+
+1080x1080 square. Leave top-left clear for logo. No watermarks.`
+  }
+
+  return `${business}
+
+${contentContext}
+
+${direction ? direction : 'Create a premium, high-quality image about this brand/topic.'}
+
+Brand colors:
+${colors}
+
+${imageGuidance}
+
+ENGLISH ONLY.
+
+${negativeContext}
+
+1080x1080 square. Leave top-left clear for logo. No watermarks.`
 }
 
 export async function generateImage(
@@ -104,7 +131,14 @@ export async function generateImage(
   const modelId = MODEL_IDS[model]
   const referenceImages = options.referenceImages || []
   const hasReferences = referenceImages.length > 0
-  const finalPrompt = buildFinalPrompt(prompt, options.brandSlug, hasReferences)
+  const finalPrompt = buildFinalPrompt(
+    prompt,
+    hasReferences,
+    options.brandConfig,
+    options.customPrompt,
+    options.topic,
+    options.slideHeadline
+  )
 
   // Build parts array: reference images first (if any), then the text prompt
   const parts: Array<Record<string, unknown>> = []

@@ -3,7 +3,6 @@
   "tagline": "Luxury Outdoor Living",
   "website": "caviarpavers.com",
   "location": "Jacksonville, Florida",
-  
   "colors": {
     "primary": {
       "brown": "#5C4033",
@@ -34,7 +33,6 @@
       "gold": "Luxury - premium quality, modern elegance"
     }
   },
-  
   "typography": {
     "headlineFont": "Playfair Display",
     "headlineFontWeight": "600",
@@ -57,7 +55,6 @@
       "note": "Mix serif headlines with sans-serif body for editorial feel"
     }
   },
-  
   "visualStyle": {
     "aesthetic": "SoHo meets Tulum with European touches - luxury editorial, magazine-quality",
     "reference": "Brazilian premium social media design",
@@ -90,9 +87,19 @@
         "Pool and patio combinations",
         "Architectural detail shots"
       ]
+    },
+    "imageGuidance": "Image descriptions should evoke: luxury outdoor living, golden hour lighting, close-up paver textures, pool/patio lifestyle shots — editorial magazine quality.",
+    "negativePrompt": "No neon cyber/tech style or glassmorphism UI language. No random stock construction imagery. No Portuguese/Spanish/non-English text.",
+    "layoutPreferences": {
+      "first": "editorial-overlay",
+      "last": "full-bleed-cta",
+      "middle": [
+        "editorial-overlay",
+        "texture-focus",
+        "magazine-spread"
+      ]
     }
   },
-  
   "contentVoice": {
     "tone": "Premium, confident, expert but approachable",
     "perspective": "We/Our - professional team voice",
@@ -104,7 +111,6 @@
     ],
     "ctaStyle": "Book Your Free Consultation | Get Your Custom Quote"
   },
-  
   "postTypes": {
     "processCarousel": {
       "description": "Showing the 5-step installation process",
@@ -122,11 +128,19 @@
     "beforeAfter": {
       "description": "Project transformations",
       "style": "Editorial treatment, not basic side-by-side",
-      "elements": ["Dramatic reveal", "Stats overlay", "Testimonial integration"]
+      "elements": [
+        "Dramatic reveal",
+        "Stats overlay",
+        "Testimonial integration"
+      ]
     },
     "promoOffer": {
       "description": "Seasonal offers and discounts",
-      "elements": ["Bold percentage", "Urgency element", "Premium CTA button"]
+      "elements": [
+        "Bold percentage",
+        "Urgency element",
+        "Premium CTA button"
+      ]
     },
     "educational": {
       "description": "Tips and expertise sharing",
@@ -139,14 +153,23 @@
     },
     "projectShowcase": {
       "description": "Featuring completed work",
-      "elements": ["Multiple angles", "Detail shots", "Lifestyle context"]
+      "elements": [
+        "Multiple angles",
+        "Detail shots",
+        "Lifestyle context"
+      ]
     }
   },
-  
   "instagram": {
     "dimensions": {
-      "square": { "width": 1080, "height": 1080 },
-      "portrait": { "width": 1080, "height": 1350 }
+      "square": {
+        "width": 1080,
+        "height": 1080
+      },
+      "portrait": {
+        "width": 1080,
+        "height": 1350
+      }
     },
     "safeZones": {
       "top": 60,
@@ -155,7 +178,6 @@
       "right": 40
     }
   },
-  
   "services": [
     "Paver Installation",
     "Patio Design",

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateImage, ImageModel, ReferenceImage } from '@/lib/nano-banana'
-import { listReferenceEntries, getMimeTypeForPath } from '@/lib/storage'
+import { listReferenceEntries, getMimeTypeForPath, getBrandConfig } from '@/lib/storage'
 import fs from 'fs'
 
 // Load up to 3 reference images for a brand
@@ -26,11 +26,14 @@ function loadReferenceImages(brandSlug: string): ReferenceImage[] {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { compositionPrompt, imageDescription, model, brandSlug } = body as {
+    const { compositionPrompt, imageDescription, model, brandSlug, customPrompt, topic, slideHeadline } = body as {
       compositionPrompt?: string
       imageDescription?: string
       model?: ImageModel
       brandSlug?: string
+      customPrompt?: string
+      topic?: string
+      slideHeadline?: string
     }
 
     const prompt = compositionPrompt || imageDescription
@@ -41,13 +44,18 @@ export async function POST(request: Request) {
       )
     }
 
-    // Load reference images for this brand (with anti-bleeding instructions in nano-banana)
+    // Load reference images and brand config
     const referenceImages = brandSlug ? loadReferenceImages(brandSlug) : []
+    const brandConfig = brandSlug ? getBrandConfig(brandSlug) : undefined
+
     console.log(`Loaded ${referenceImages.length} reference images for ${brandSlug}`)
 
     const result = await generateImage(prompt, model || 'pro', {
-      brandSlug,
+      brandConfig,
       referenceImages,
+      customPrompt,
+      topic,
+      slideHeadline,
     })
 
     if (!result.imageBase64) {

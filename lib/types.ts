@@ -29,15 +29,16 @@ export interface BrandTypography {
 
 export interface BrandVisualStyle {
   aesthetic: string
-  reference: string
-  elements: string[]
-  layouts: string[]
-  cardStyle?: {
-    background: string
-    border: string
-    borderRadius: string
-    backdropBlur: string
-    padding: string
+  reference?: string
+  elements?: string[]
+  layouts?: string[]
+  cardStyle?: Record<string, string>
+  imageGuidance?: string
+  negativePrompt?: string
+  layoutPreferences?: {
+    first?: string
+    last?: string
+    middle?: string[]
   }
   photoTreatment?: {
     colorGrade: string

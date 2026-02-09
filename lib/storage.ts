@@ -159,6 +159,22 @@ export function writeStyleAnalysis(brandSlug: string, data: Record<string, unkno
   return analysisPath
 }
 
+export function getBrandConfig(brandSlug: string): any {
+  // Check runtime first (if user edited it via UI - though we don't support that yet, good based on pattern)
+  const runtimePath = path.join(getRuntimeBrandDir(brandSlug), 'brand.json')
+  if (fs.existsSync(runtimePath)) {
+    return JSON.parse(fs.readFileSync(runtimePath, 'utf-8'))
+  }
+
+  // Fallback to bundled
+  const bundledPath = path.join(getBundledBrandDir(brandSlug), 'brand.json')
+  if (fs.existsSync(bundledPath)) {
+    return JSON.parse(fs.readFileSync(bundledPath, 'utf-8'))
+  }
+
+  return null
+}
+
 export function getMimeTypeForPath(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase()
   const map: Record<string, string> = {

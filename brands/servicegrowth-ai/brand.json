@@ -2,7 +2,6 @@
   "name": "ServiceGrowth AI",
   "tagline": "Built by operators, not grifters",
   "website": "servicegrowth.ai",
-  
   "colors": {
     "primary": {
       "background": "#0D0D0D",
@@ -21,13 +20,12 @@
       "muted": "#666666"
     }
   },
-  
   "typography": {
-    "headlineFont": "Inter",
-    "headlineFontWeight": "800",
+    "headlineFont": "Playfair Display",
+    "headlineFontWeight": "600",
     "bodyFont": "Inter",
     "bodyFontWeight": "400",
-    "accentFont": "Inter",
+    "accentFont": "Cormorant Garamond",
     "sizes": {
       "heroHeadline": "48px",
       "slideHeadline": "32px",
@@ -36,34 +34,44 @@
       "caption": "12px"
     }
   },
-  
   "visualStyle": {
-    "aesthetic": "Tech-forward, personal brand, insider knowledge",
-    "reference": "Oliver Merrick style",
+    "aesthetic": "High-end tech editorial, cyberpunk fashion, cinematic minimalism",
+    "reference": "Magazine layouts with neon tech palette",
     "elements": [
-      "Glassmorphism cards with subtle blur",
-      "Floating app icons (ChatGPT, Notion, Slack, n8n, GoHighLevel)",
-      "Dark backgrounds with depth",
-      "Cyan/teal accent highlights on key words",
-      "Personal photos mixed with tech ecosystem",
-      "Rounded corners on cards (16px radius)",
-      "Subtle glow effects on accent elements"
+      "Editorial serif typography (Playfair)",
+      "Deep cinematic black backgrounds",
+      "Neon cyan/teal accents used sparingly (fine lines, glow)",
+      "Minimalist layouts with massive negative space",
+      "Glassmorphism with editorial structure",
+      "High-quality tech lifestyle imagery",
+      "Ripped paper / organic texture overlays (digital style)"
     ],
     "layouts": [
-      "card-on-blur: Text card floating over blurred photo background",
-      "full-photo-overlay: Full bleed photo with glassmorphism text overlay",
-      "icon-diagram: Flowchart style with app icons and arrows",
-      "split-content: Photo on one side, text card on other"
+      "editorial-text: Large serif headline with small body text on black",
+      "split-lifestyle: Half photo (dark tech), half text (minimal)",
+      "cinematic-glow: Dark mood with subtle cyan rim light",
+      "quote-minimal: Centered quote with elegant quotation marks"
     ],
     "cardStyle": {
-      "background": "rgba(30, 30, 30, 0.85)",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "borderRadius": "16px",
+      "background": "rgba(13, 13, 13, 0.8)",
+      "border": "1px solid rgba(0, 212, 255, 0.1)",
+      "borderRadius": "0px",
       "backdropBlur": "20px",
-      "padding": "32px"
+      "padding": "40px",
+      "shadow": "0 10px 40px rgba(0, 212, 255, 0.05)"
+    },
+    "imageGuidance": "Create high-end tech-fashion editorial images. Palette: Deep blacks, dark greys, neon cyan (#00D4FF) and teal accents. Style: Cinematic, moody, minimalist. Compositions: Magazine-style layouts, subjects (tech professionals) in dark modern spaces, abstract data visualizations treated as art. Lighting: Rim lighting, neon glow, deep shadows. NO beige, NO warm tones, NO cartoon.",
+    "negativePrompt": "cartoon, grunge, clutter, messy, low resolution, purple, blue matrix, generic 3d render, illustration, amateur",
+    "layoutPreferences": {
+      "first": "editorial-text",
+      "last": "split-lifestyle",
+      "middle": [
+        "cinematic-dark",
+        "floating-device",
+        "quote-minimal"
+      ]
     }
   },
-  
   "contentVoice": {
     "tone": "Direct, confident, insider knowledge",
     "perspective": "First person - sharing what actually works",
@@ -75,18 +83,40 @@
     ],
     "ctaStyle": "Comment '[word]' to get the full guide"
   },
-  
   "appIcons": [
-    { "name": "ChatGPT", "icon": "chatgpt-icon.svg" },
-    { "name": "Claude", "icon": "claude-icon.svg" },
-    { "name": "Notion", "icon": "notion-icon.svg" },
-    { "name": "Slack", "icon": "slack-icon.svg" },
-    { "name": "n8n", "icon": "n8n-icon.svg" },
-    { "name": "GoHighLevel", "icon": "gohighlevel-icon.svg" },
-    { "name": "Gmail", "icon": "gmail-icon.svg" },
-    { "name": "Figma", "icon": "figma-icon.svg" }
+    {
+      "name": "ChatGPT",
+      "icon": "chatgpt-icon.svg"
+    },
+    {
+      "name": "Claude",
+      "icon": "claude-icon.svg"
+    },
+    {
+      "name": "Notion",
+      "icon": "notion-icon.svg"
+    },
+    {
+      "name": "Slack",
+      "icon": "slack-icon.svg"
+    },
+    {
+      "name": "n8n",
+      "icon": "n8n-icon.svg"
+    },
+    {
+      "name": "GoHighLevel",
+      "icon": "gohighlevel-icon.svg"
+    },
+    {
+      "name": "Gmail",
+      "icon": "gmail-icon.svg"
+    },
+    {
+      "name": "Figma",
+      "icon": "figma-icon.svg"
+    }
   ],
-  
   "postTypes": {
     "educationalCarousel": {
       "description": "Multi-slide carousel teaching a concept or system",
@@ -102,18 +132,31 @@
     },
     "toolShowcase": {
       "description": "Highlighting AI tools and how to use them",
-      "elements": ["Floating app icons", "Screenshot integration", "Step-by-step flow"]
+      "elements": [
+        "Floating app icons",
+        "Screenshot integration",
+        "Step-by-step flow"
+      ]
     },
     "behindTheScenes": {
       "description": "Showing actual workflows and systems",
-      "elements": ["Screen recordings styled", "Dashboard screenshots", "Real data"]
+      "elements": [
+        "Screen recordings styled",
+        "Dashboard screenshots",
+        "Real data"
+      ]
     }
   },
-  
   "instagram": {
     "dimensions": {
-      "square": { "width": 1080, "height": 1080 },
-      "portrait": { "width": 1080, "height": 1350 }
+      "square": {
+        "width": 1080,
+        "height": 1080
+      },
+      "portrait": {
+        "width": 1080,
+        "height": 1350
+      }
     },
     "safeZones": {
       "top": 60,

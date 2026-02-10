@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { generateImage, ImageModel, ReferenceImage } from '@/lib/nano-banana'
-import { listReferenceEntries, getMimeTypeForPath, getBrandConfig } from '@/lib/storage'
+import { generateImage, ImageModel, ReferenceImage, buildApprovedImageGuidance } from '@/lib/nano-banana'
+import { listReferenceEntries, getMimeTypeForPath, getBrandConfig, listApprovedImages } from '@/lib/storage'
 import fs from 'fs'
 
 // Load up to 3 reference images for a brand
@@ -26,7 +26,7 @@ function loadReferenceImages(brandSlug: string): ReferenceImage[] {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { compositionPrompt, imageDescription, model, brandSlug, customPrompt, topic, slideHeadline } = body as {
+    const { compositionPrompt, imageDescription, model, brandSlug, customPrompt, topic, slideHeadline, carouselTheme, aspectRatio } = body as {
       compositionPrompt?: string
       imageDescription?: string
       model?: ImageModel
@@ -34,6 +34,8 @@ export async function POST(request: Request) {
       customPrompt?: string
       topic?: string
       slideHeadline?: string
+      carouselTheme?: any
+      aspectRatio?: '1:1' | '9:16'
     }
 
     const prompt = compositionPrompt || imageDescription
@@ -44,11 +46,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // Load reference images and brand config
+    // Load reference images, brand config, and approved image guidance
     const referenceImages = brandSlug ? loadReferenceImages(brandSlug) : []
     const brandConfig = brandSlug ? getBrandConfig(brandSlug) : undefined
+    const approvedImages = brandSlug ? listApprovedImages(brandSlug) : []
+    const approvedGuidance = buildApprovedImageGuidance(approvedImages)
 
-    console.log(`Loaded ${referenceImages.length} reference images for ${brandSlug}`)
+    console.log(`Loaded ${referenceImages.length} reference images, ${approvedImages.length} approved images for ${brandSlug}`)
 
     const result = await generateImage(prompt, model || 'pro', {
       brandConfig,
@@ -56,6 +60,9 @@ export async function POST(request: Request) {
       customPrompt,
       topic,
       slideHeadline,
+      carouselTheme,
+      aspectRatio,
+      approvedGuidance,
     })
 
     if (!result.imageBase64) {

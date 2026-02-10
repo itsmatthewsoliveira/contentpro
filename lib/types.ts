@@ -63,6 +63,54 @@ export interface PostType {
   topics?: string[]
 }
 
+// ── Design System Types (Creative Director Engine) ──
+
+export interface PhotographyStyle {
+  treatment: string
+  subjects: string[]
+  framing: string[]
+  mood: string
+}
+
+export interface TypeLevel {
+  style: string
+  scale: string
+  placement: string | string[]
+  effects?: string[]
+  usage?: string
+}
+
+export interface ChromeElement {
+  element?: string
+  left?: string
+  right?: string
+  style: string
+}
+
+export interface ColorApplication {
+  photoOverlay?: string
+  textPrimary: string
+  textAccent: string
+  backgroundFallback: string
+}
+
+export interface DesignSystem {
+  photographyStyle: PhotographyStyle
+  typographySystem: {
+    headline: TypeLevel
+    body: TypeLevel
+    accent?: TypeLevel
+  }
+  repeatingChrome?: {
+    topBar?: ChromeElement
+    bottomBar?: ChromeElement
+  }
+  decorativeElements: string[]
+  colorApplication: ColorApplication
+  compositionVariations: string[]
+  assetPalette: string[]
+}
+
 export interface BrandConfig {
   name: string
   tagline: string
@@ -72,6 +120,7 @@ export interface BrandConfig {
   typography: BrandTypography
   visualStyle: BrandVisualStyle
   contentVoice: BrandContentVoice
+  designSystem?: DesignSystem
   appIcons?: { name: string; icon: string }[]
   postTypes: Record<string, PostType>
   instagram: {
@@ -100,6 +149,10 @@ export interface Slide {
   totalSlides: number
   tag?: string
   stepNumber?: number
+  photographySubject?: string
+  compositionVariation?: string
+  accentWords?: string[]
+  heroAsset?: string
   generatedImage?: string // base64 data URL from Nano Banana
   backgroundImage?: string // user-uploaded background (legacy/override)
 }
@@ -138,6 +191,25 @@ export interface Brief {
   caption: string
   hashtags: string[]
   imageSource: string
+}
+
+// ── Approved Images Types ──
+
+export interface ApprovedImageMetadata {
+  id: string
+  brandSlug: string
+  slideNumber: number
+  headline: string
+  subtext: string
+  compositionPrompt: string
+  engine: 'gemini' | 'openai'
+  model?: string
+  topic: string
+  carouselTheme?: CarouselTheme
+  globalDirection?: string
+  aspectRatio: '1:1' | '9:16'
+  approvedAt: string
+  imagePath: string // relative path to the saved PNG
 }
 
 // ── UI State Types ──

@@ -17,7 +17,7 @@ export default function TopicInput({ brand, brandSlug, onGenerate, isGenerating 
 
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
   const accentColor = isServiceGrowth
-    ? brand.colors.accent?.cyan || '#00D4FF'
+    ? brand.colors.accent?.indigo || '#4F46E5'
     : brand.colors.accent?.gold || '#C9A227'
 
   const handleSubmit = (e: React.FormEvent) => {

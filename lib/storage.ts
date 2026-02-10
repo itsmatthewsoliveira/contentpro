@@ -175,6 +175,69 @@ export function getBrandConfig(brandSlug: string): any {
   return null
 }
 
+// ── Approved Images ──
+
+export function getRuntimeApprovedDir(brandSlug: string): string {
+  return path.join(getRuntimeBrandDir(brandSlug), 'approved')
+}
+
+export function ensureApprovedDir(brandSlug: string): string {
+  const dir = getRuntimeApprovedDir(brandSlug)
+  fs.mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+export function saveApprovedImage(
+  brandSlug: string,
+  imageBase64: string,
+  metadata: Record<string, unknown>
+): { id: string; imagePath: string; metadataPath: string } {
+  const dir = ensureApprovedDir(brandSlug)
+  const id = `${Date.now()}-slide${metadata.slideNumber || 0}`
+  const imagePath = path.join(dir, `${id}.png`)
+  const metadataPath = path.join(dir, `${id}.json`)
+
+  // Write image
+  const buffer = Buffer.from(imageBase64, 'base64')
+  fs.writeFileSync(imagePath, buffer)
+
+  // Write metadata with id and imagePath
+  const fullMetadata = { id, ...metadata, imagePath: `${id}.png` }
+  fs.writeFileSync(metadataPath, JSON.stringify(fullMetadata, null, 2))
+
+  return { id, imagePath, metadataPath }
+}
+
+export function listApprovedImages(brandSlug: string): Record<string, unknown>[] {
+  const dir = getRuntimeApprovedDir(brandSlug)
+  if (!fs.existsSync(dir)) return []
+
+  const jsonFiles = fs.readdirSync(dir)
+    .filter(f => f.endsWith('.json'))
+    .sort()
+    .reverse() // newest first
+
+  return jsonFiles.map(f => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8'))
+    } catch {
+      return null
+    }
+  }).filter(Boolean) as Record<string, unknown>[]
+}
+
+export function deleteApprovedImage(brandSlug: string, id: string): boolean {
+  const dir = getRuntimeApprovedDir(brandSlug)
+  const safeId = path.basename(id) // prevent path traversal
+  const imagePath = path.join(dir, `${safeId}.png`)
+  const metadataPath = path.join(dir, `${safeId}.json`)
+
+  let deleted = false
+  if (fs.existsSync(imagePath)) { fs.unlinkSync(imagePath); deleted = true }
+  if (fs.existsSync(metadataPath)) { fs.unlinkSync(metadataPath); deleted = true }
+  return deleted
+}
+
 export function getMimeTypeForPath(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase()
   const map: Record<string, string> = {

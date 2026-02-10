@@ -111,6 +111,71 @@
     ],
     "ctaStyle": "Book Your Free Consultation | Get Your Custom Quote"
   },
+  "designSystem": {
+    "photographyStyle": {
+      "treatment": "Warm golden-hour color grade, slight contrast boost, natural warmth",
+      "subjects": ["Completed luxury paver patios at golden hour", "Close-up paver textures and patterns", "Pool deck with crystal blue water", "Family/couple relaxing in outdoor living space", "Architectural detail shots of stonework"],
+      "framing": ["Full-bleed edge-to-edge, photo IS the slide", "Subject positioned using rule of thirds", "Low angle looking across paver surface for drama"],
+      "mood": "Warm, aspirational, luxury lifestyle — makes you want to be there"
+    },
+    "typographySystem": {
+      "headline": {
+        "style": "Playfair Display 600, mixed case, cream #F5F0E6",
+        "scale": "30-45% of slide height, elegant not overpowering",
+        "placement": ["Bottom-left quadrant over photo", "Top-left with photo below", "Centered over dark overlay zone"],
+        "effects": ["Key word in italic Cormorant Garamond for elegance", "Sometimes a word gets gold #C9A227 color"]
+      },
+      "body": {
+        "style": "Montserrat 400, regular case, #F5F0E6 at 80% opacity",
+        "scale": "14-15px equivalent, max 2 lines",
+        "placement": ["Below headline with 12px gap"]
+      },
+      "accent": {
+        "style": "Cormorant Garamond italic, cream or gold",
+        "usage": "1 key word per headline gets this italic serif treatment for editorial elegance"
+      }
+    },
+    "repeatingChrome": {
+      "topBar": {
+        "left": "CAVIAR PAVERS",
+        "right": "JACKSONVILLE, FL",
+        "style": "9px Montserrat 500, uppercase, tracked 0.2em, #F5F0E6 at 60% opacity"
+      },
+      "bottomBar": {
+        "element": "Elegant pill button with CTA or category",
+        "style": "Outlined in gold #C9A227, 10px Montserrat 500, cream text, rounded-full, with small arrow icon"
+      }
+    },
+    "decorativeElements": [
+      "Gold thin line (#C9A227, 0.5px) as horizontal separator or frame element",
+      "Short gold decorative dash between headline and subtext",
+      "Subtle warm vignette around photo edges (darken edges 10-15%)",
+      "Small outlined pill badges for service categories"
+    ],
+    "colorApplication": {
+      "photoOverlay": "Warm dark gradient overlay on bottom 40% of photo for text legibility (from transparent to rgba(30,58,95,0.7))",
+      "textPrimary": "#F5F0E6 cream for all text on photos",
+      "textAccent": "Gold #C9A227 for emphasis words or decorative elements",
+      "backgroundFallback": "#1E3A5F navy for non-photo slides"
+    },
+    "compositionVariations": [
+      "lifestyle-overlay: Full-bleed golden-hour lifestyle photo, headline in bottom-left over gradient overlay, small chrome elements",
+      "texture-hero: Close-up paver texture fills slide, large centered headline with gold accent word, subtle dark overlay",
+      "editorial-split: Photo takes right 55%, left 45% is navy #1E3A5F solid with cream headline and gold separator line",
+      "before-after: Diagonal split — before on left (desaturated), after on right (full warmth), headline across the divide",
+      "stat-showcase: Navy background, large gold number/stat centered, Playfair Display headline below, small paver texture strip at bottom",
+      "cta-card: Full-bleed photo with elegant frosted card overlay in center containing headline, subtext, and outlined gold pill CTA button"
+    ],
+    "assetPalette": [
+      "Golden-hour patio/pool photograph",
+      "Close-up herringbone paver pattern texture",
+      "Luxury outdoor kitchen with stone countertops",
+      "Infinity pool edge with paver deck",
+      "Aerial drone shot of completed backyard project",
+      "Natural stone wall texture close-up",
+      "Elegant gold-outlined pill CTA button"
+    ]
+  },
   "postTypes": {
     "processCarousel": {
       "description": "Showing the 5-step installation process",

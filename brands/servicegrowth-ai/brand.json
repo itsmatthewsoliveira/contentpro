@@ -4,71 +4,81 @@
   "website": "servicegrowth.ai",
   "colors": {
     "primary": {
-      "background": "#0D0D0D",
-      "backgroundAlt": "#1A1A1A",
-      "card": "rgba(30, 30, 30, 0.8)",
-      "cardBorder": "rgba(255, 255, 255, 0.1)"
+      "background": "#0A0A1A",
+      "backgroundAlt": "#12122A",
+      "card": "rgba(20, 20, 50, 0.6)",
+      "cardBorder": "rgba(255, 255, 255, 0.08)"
     },
     "accent": {
-      "cyan": "#00D4FF",
-      "cyanGlow": "rgba(0, 212, 255, 0.3)",
-      "teal": "#00B4D8"
+      "indigo": "#4F46E5",
+      "indigoLight": "#6366F1",
+      "indigoGlow": "rgba(79, 70, 229, 0.3)"
     },
     "text": {
       "primary": "#FFFFFF",
-      "secondary": "#B0B0B0",
-      "muted": "#666666"
+      "secondary": "#B0B0C8",
+      "muted": "#555577"
     }
   },
   "typography": {
-    "headlineFont": "Playfair Display",
-    "headlineFontWeight": "600",
+    "headlineFont": "Anton",
+    "headlineFontWeight": "400",
+    "subheadFont": "Inter",
+    "subheadFontWeight": "500",
     "bodyFont": "Inter",
     "bodyFontWeight": "400",
-    "accentFont": "Cormorant Garamond",
+    "accentFont": "Inter",
     "sizes": {
-      "heroHeadline": "48px",
-      "slideHeadline": "32px",
-      "subheadline": "20px",
-      "body": "16px",
-      "caption": "12px"
+      "heroHeadline": "64px",
+      "slideHeadline": "48px",
+      "subheadline": "18px",
+      "body": "15px",
+      "caption": "11px"
+    },
+    "style": {
+      "headlineCase": "uppercase",
+      "tracking": "0.02em",
+      "mixedWeights": true,
+      "note": "Bold condensed uppercase headlines (Anton/Knockout style) with clean Inter body text — editorial impact meets tech clarity"
     }
   },
   "visualStyle": {
-    "aesthetic": "High-end tech editorial, cyberpunk fashion, cinematic minimalism",
-    "reference": "Magazine layouts with neon tech palette",
+    "aesthetic": "Bold creative studio meets tech — dark backgrounds, condensed uppercase headlines, pop art imagery, editorial magazine energy. Not a boring SaaS brand — a creative powerhouse that happens to do AI.",
+    "reference": "Mystiká Moon Studio editorial style (bold condensed fonts, culture references, mixed typography weights) adapted for dark tech aesthetic",
     "elements": [
-      "Editorial serif typography (Playfair)",
-      "Deep cinematic black backgrounds",
-      "Neon cyan/teal accents used sparingly (fine lines, glow)",
-      "Minimalist layouts with massive negative space",
-      "Glassmorphism with editorial structure",
-      "High-quality tech lifestyle imagery",
-      "Ripped paper / organic texture overlays (digital style)"
+      "Bold condensed uppercase headlines (Anton/Knockout style, 2-4 words per line, filling the slide)",
+      "Deep navy-black backgrounds (#0A0A1A to #12122A) with indigo/violet gradient accents",
+      "Pop art and cultural reference imagery — movie stills, trending moments, iconic visuals repurposed as business metaphors",
+      "3D chrome/metallic rendered objects as visual anchors when culture imagery isn't used",
+      "Small tracked uppercase category labels above headlines (HOW WE WORK, BRUTAL TRUTHS)",
+      "Mixed typography weights within sentences — some words bold, others regular, accent words underlined or colored",
+      "Floating glassmorphism pill/chip badges with icons",
+      "Arrow → indicators for CTAs and swipe prompts",
+      "Generated portfolio showcase pieces — displaying AI output as proof of capability"
     ],
     "layouts": [
-      "editorial-text: Large serif headline with small body text on black",
-      "split-lifestyle: Half photo (dark tech), half text (minimal)",
-      "cinematic-glow: Dark mood with subtle cyan rim light",
-      "quote-minimal: Centered quote with elegant quotation marks"
+      "headline-hero: Massive bold headline (40-60% of slide) with supporting subtext below, imagery behind/under text",
+      "text-over-image: Bold headline over desaturated grayscale photo or 3D object, gradient overlay",
+      "chip-layout: Bold headline with scattered floating pill/badge elements listing benefits",
+      "split-gradient: Diagonal gradient band splitting the slide, text on one side, visual on other"
     ],
     "cardStyle": {
-      "background": "rgba(13, 13, 13, 0.8)",
-      "border": "1px solid rgba(0, 212, 255, 0.1)",
-      "borderRadius": "0px",
+      "background": "rgba(10, 10, 26, 0.85)",
+      "border": "1px solid rgba(79, 70, 229, 0.15)",
+      "borderRadius": "16px",
       "backdropBlur": "20px",
       "padding": "40px",
-      "shadow": "0 10px 40px rgba(0, 212, 255, 0.05)"
+      "shadow": "0 10px 40px rgba(79, 70, 229, 0.08)"
     },
-    "imageGuidance": "Create high-end tech-fashion editorial images. Palette: Deep blacks, dark greys, neon cyan (#00D4FF) and teal accents. Style: Cinematic, moody, minimalist. Compositions: Magazine-style layouts, subjects (tech professionals) in dark modern spaces, abstract data visualizations treated as art. Lighting: Rim lighting, neon glow, deep shadows. NO beige, NO warm tones, NO cartoon.",
-    "negativePrompt": "cartoon, grunge, clutter, messy, low resolution, purple, blue matrix, generic 3d render, illustration, amateur",
+    "imageGuidance": "Create bold editorial Instagram slides for a creative AI studio. BACKGROUND: Deep dark navy-black (#0A0A1A). TYPOGRAPHY: Bold condensed uppercase headlines (Anton/Knockout style), white, filling 40-60% of the slide. Key accent words get indigo #4F46E5 color or underline treatment. Small tracked uppercase category labels above headlines. IMAGERY: Two modes — (1) Pop art and cultural references as bold visual backdrops with text overlaid, or (2) 3D chrome rendered assets as concept metaphors. When showcasing work, display generated images/renders as portfolio pieces within the slide. DESIGN ELEMENTS: Category labels above headlines, mixed font weights, glassmorphism pill badges, arrow → indicators. The feel is BOLD, CREATIVE, CULTURALLY AWARE — like a creative director's feed, not a software company's.",
+    "negativePrompt": "DO NOT use: generic AI stock imagery, generic suited businessman, woman touching holographic dashboard, boring corporate photography, clip art, cartoon, neon cyan, teal, warm tones, beige, serif fonts, script fonts, cursive fonts, calligraphy, handwriting, pink, maroon, orange, green accents, Portuguese text, Spanish text. ENGLISH ONLY. NO misspellings. NO generic, boring, forgettable compositions.",
     "layoutPreferences": {
-      "first": "editorial-text",
-      "last": "split-lifestyle",
+      "first": "headline-hero",
+      "last": "chip-layout",
       "middle": [
-        "cinematic-dark",
-        "floating-device",
-        "quote-minimal"
+        "text-over-image",
+        "split-gradient",
+        "headline-hero"
       ]
     }
   },
@@ -82,6 +92,93 @@
       "[Controversial statement]. Here's why."
     ],
     "ctaStyle": "Comment '[word]' to get the full guide"
+  },
+  "designSystem": {
+    "photographyStyle": {
+      "treatment": "Two modes: (1) Pop art / cultural reference imagery — vibrant, high-contrast, editorial-grade. (2) Desaturated grayscale — blended into dark background as texture, not focal point",
+      "subjects": [
+        "Pop art and modern culture references — movie stills, iconic cultural moments, trending visual references repurposed for business content",
+        "AI-generated editorial photography — bold, stylized, not generic stock",
+        "Before/after transformation renders (architecture plans → 3D renders, messy workflow → clean automation)",
+        "Product showcase imagery — Nano Banana outputs, AI tool interfaces, generated assets displayed as portfolio pieces",
+        "3D rendered objects and scenes — chrome metallic assets, abstract tech compositions",
+        "Behind-the-scenes creative process shots — screens, tools, workflows in action"
+      ],
+      "framing": [
+        "Full-bleed hero imagery — photo IS the slide background, text overlaid",
+        "Subject positioned using rule of thirds with text on opposite side",
+        "Cropped tight for texture backgrounds at 30-50% opacity behind bold headlines",
+        "Split composition — half vivid imagery, half solid dark with text"
+      ],
+      "mood": "Bold, culturally aware, visually striking — like a creative studio's Instagram, not a SaaS company's. The kind of content that makes people stop and say 'wait, an AI company posted THIS?'"
+    },
+    "typographySystem": {
+      "headline": {
+        "style": "Anton 400 (bold condensed uppercase), white #FFFFFF",
+        "scale": "40-60% of slide height — headlines dominate the canvas, impossible to miss",
+        "placement": ["Left-aligned, starting 12-18% from top, 6% from left", "Centered for hook/CTA impact slides"],
+        "effects": [
+          "Key accent word in indigo #4F46E5 text color OR with indigo underline",
+          "2-4 words per line, stacked vertically, tight line-height (0.92em)",
+          "Some words can get bold weight treatment within mixed-weight sentences (bold + regular in same line for emphasis)",
+          "Underline decoration on accent words (like Mystiká style)"
+        ]
+      },
+      "body": {
+        "style": "Inter 400 (Regular), #B0B0C8, sentence case",
+        "scale": "14-16px equivalent, max 2 lines",
+        "placement": ["Below headline with 16px gap, same left alignment"]
+      },
+      "accent": {
+        "style": "Inter 600 (Semi-Bold), indigo #4F46E5 or white",
+        "usage": "Used for category labels (small tracked uppercase above headline), pill badge text, stat callouts, and inline bold emphasis within body text"
+      }
+    },
+    "repeatingChrome": {
+      "topBar": {
+        "left": "SERVICEGROWTH",
+        "right": "AI AUTOMATION",
+        "style": "10px Inter 500, uppercase, tracked 0.15em, #555577 muted"
+      },
+      "bottomBar": {
+        "element": "Small category label or CTA pill at bottom, plus arrow icon →",
+        "style": "10px Inter 500 uppercase tracked, indigo outlined pill or muted text, with arrow indicator"
+      }
+    },
+    "decorativeElements": [
+      "Small tracked uppercase category label above headline ('HOW WE WORK', 'BRUTAL TRUTHS', 'OUR PROCESS') — 10px Inter 500, indigo or muted gray",
+      "Floating glassmorphism pill badges (frosted glass bg, 1px indigo border, 11px Inter 500 white text, rounded-full)",
+      "Subtle indigo bokeh/particle dots scattered in background at 3-8% opacity",
+      "Arrow icon → as swipe indicator or CTA accent",
+      "Underline decorations on accent words (2px, indigo #4F46E5)",
+      "Thin decorative lines (1px, #555577 at 20% opacity) as section separators",
+      "Bold highlighted text blocks — key phrases with indigo background highlight behind white text"
+    ],
+    "colorApplication": {
+      "photoOverlay": "When using dark mode: dark navy-black gradient overlay on bottom or side, photo visible at 60-100% in hero zone. When using culture/pop art imagery: let the image be vivid, overlay only where text sits",
+      "textPrimary": "#FFFFFF white for all headlines",
+      "textAccent": "Key words in #4F46E5 indigo — either colored text, underlined, or white-on-indigo highlight box",
+      "backgroundFallback": "Solid #0A0A1A or radial gradient from #0A0A1A center to #12122A edges"
+    },
+    "compositionVariations": [
+      "culture-hero: Full-bleed pop art / cultural reference image as background, bold condensed headline overlaid at bottom-left with dark gradient overlay for legibility, small category label above headline",
+      "hero-text: Massive stacked uppercase headline (50%+ of slide) left-aligned, 3D asset or pop art element on right at 35% scale, dark gradient background",
+      "split-editorial: Half the slide is vivid imagery (pop art, before/after, portfolio piece), half is solid dark with bold headline — editorial magazine feel",
+      "showcase-card: Generated image / portfolio piece / transformation displayed as a card/screen within the slide, headline below or above, dark background — 'look what we made'",
+      "chip-scatter: Bold headline left-aligned, 3-5 glassmorphism pill badges floating to the right listing benefits or tools",
+      "stat-callout: Large number/stat in 72px Anton uppercase indigo, supporting headline below in white, minimal dark background with subtle cultural reference faded in corner",
+      "cta-card: Centered frosted glass card (glassmorphism) with headline inside, indigo border glow, bold condensed text, arrow indicator"
+    ],
+    "assetPalette": [
+      "Pop art and modern culture imagery — movie scenes, iconic moments, trending references repurposed as business metaphors",
+      "AI-generated portfolio showcase pieces — 'look what Nano Banana created' (renders, designs, transformations)",
+      "Before/after transformation pairs — messy → clean, sketch → render, manual → automated",
+      "3D chrome metallic objects (funnel, gear, rocket, shield, chart) as concept metaphors",
+      "Floating app icon badges (ChatGPT, Claude, n8n, Slack — frosted glass style)",
+      "Product screenshots styled as floating cards with glass effect",
+      "Abstract indigo gradient orb or volumetric light effect",
+      "Bold emoji or icon as visual anchor (like the gingerbread man metaphor style — using a fun visual to explain a serious concept)"
+    ]
   },
   "appIcons": [
     {

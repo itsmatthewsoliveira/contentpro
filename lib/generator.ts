@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { BrandConfig, Brief, Slide } from './types'
+import { BrandConfig, Brief, Slide, DesignSystem } from './types'
 import { readStyleAnalysis } from './storage'
 
 interface GenerateOptions {
@@ -162,84 +162,203 @@ function enrichCompositionPrompt(
   const { identity, negatives } = getBrandPromptRules(brand)
   const headline = asText(slide.headline)
   const subtext = asText(slide.subtext)
+  const ds = brand.designSystem
+
+  // If we have a designSystem, the basePrompt is already a full layered spec
+  const compositionBlock = ds
+    ? `LAYERED DESIGN SPECIFICATION:\n${basePrompt}`
+    : `COMPOSITION BRIEF:\n${basePrompt}`
+
+  // Build typography system rules if designSystem exists
+  const typographyBlock = ds
+    ? `\nTYPOGRAPHY SYSTEM (follow exactly):
+- Headline: ${ds.typographySystem.headline.style}, scale ${ds.typographySystem.headline.scale}
+- Body: ${ds.typographySystem.body.style}, scale ${ds.typographySystem.body.scale}
+${ds.typographySystem.accent ? `- Accent: ${ds.typographySystem.accent.style} — ${ds.typographySystem.accent.usage}` : ''}`
+    : ''
 
   return `${identity}
 
-CAROUSEL THEME (use consistently on all slides):
+VISUAL STYLE (apply to this single slide):
 - Art direction: ${theme.artDirection}
 - Lighting: ${theme.lighting}
 - Framing: ${theme.framing}
 - Texture motif: ${theme.textureMotif}
 - Consistency anchor: ${theme.consistencyAnchor}
+${typographyBlock}
 
 SLIDE CONTEXT:
 - Slide ${slideNumber}/${totalSlides}
 - Headline: ${headline || 'N/A'}
 - Subtext: ${subtext || 'N/A'}
 
-COMPOSITION BRIEF:
-${basePrompt}
+${compositionBlock}
+
+DESIGN FUNDAMENTALS:
+- Use rule of thirds for element placement — align key elements along grid lines and intersections
+- Maintain clear visual hierarchy: primary headline > supporting text > background elements
+- Use consistent alignment — left-align or center-align text blocks, never mix randomly
+- Ensure adequate whitespace between elements — avoid crowding
+- Balance visual weight across the composition
 
 EXECUTION QUALITY BAR:
+- Generate exactly ONE single image — do NOT create a grid, collage, or multiple panels
 - 1080x1080 Instagram-ready design
-- Leave top-left 60x60 clear for logo overlay
 - Professional design output, not generic AI stock style
-- No logo, no watermark
+- DO NOT include any logo, brand name, company name, tagline, or watermark text
 - ${brand.visualStyle?.imageGuidance || 'High quality professional look'}
 
 ${negatives}`
 }
 
-// Generate a creative brief that gives direction but leaves room for visual creativity
-// Generate a creative brief that gives direction but leaves room for visual creativity
-function generateCreativeBrief(
+// Build a Photoshop-level layered design spec — the exact thought process a designer goes through
+function buildDesignSpec(
   brand: BrandConfig,
   slide: Partial<Slide>,
   slideNumber: number,
   totalSlides: number,
   theme: CarouselTheme
 ): string {
+  const ds = brand.designSystem
   const headline = asText(slide.headline).replace(/\*/g, '')
   const subtext = asText(slide.subtext)
   const purpose = asText(slide.purpose)
   const imageDesc = asText(slide.imageDescription)
+  const photographySubject = asText(slide.photographySubject)
+  const compositionVariation = asText(slide.compositionVariation)
+  const heroAsset = asText(slide.heroAsset)
+  const accentWords = slide.accentWords || []
 
-  // Build a creative brief that describes WHAT to create, not HOW
-  const parts: string[] = []
+  // If no designSystem, fall back to the old brief style
+  if (!ds) {
+    const parts: string[] = []
+    if (slideNumber === 1) parts.push('Opening hook slide — grab attention.')
+    else if (slideNumber === totalSlides) parts.push('Final CTA slide — clear call to action.')
+    else parts.push(`Slide ${slideNumber}/${totalSlides} — ${purpose.toLowerCase()}.`)
+    parts.push(`Message: "${headline}"`)
+    if (subtext) parts.push(`Supporting: "${subtext}"`)
+    if (imageDesc) parts.push(`Visual concept: ${imageDesc}`)
+    if (brand.visualStyle?.aesthetic) parts.push(`Mood: ${brand.visualStyle.aesthetic}`)
+    parts.push(`Art direction: ${theme.artDirection}`)
+    return parts.join('\n')
+  }
 
-  // Slide role in the story
-  if (slideNumber === 1) {
-    parts.push('Opening hook slide — grab attention, create intrigue.')
-  } else if (slideNumber === totalSlides) {
-    parts.push('Final CTA slide — clear call to action, confident energy.')
+  // Find the matching composition variation description
+  const selectedVariation = compositionVariation
+    ? ds.compositionVariations.find(v => v.startsWith(compositionVariation + ':')) || ds.compositionVariations[0]
+    : ds.compositionVariations[Math.min(slideNumber - 1, ds.compositionVariations.length - 1)]
+
+  // Build layered canvas spec
+  const layers: string[] = []
+
+  // CANVAS — the foundation
+  const bgSubject = photographySubject || imageDesc
+  if (bgSubject && (selectedVariation.includes('culture-hero') || selectedVariation.includes('split-editorial') || selectedVariation.includes('full-bleed'))) {
+    layers.push(`CANVAS: Full-bleed photograph/image — ${bgSubject}. ${ds.photographyStyle.treatment.split('.')[0]}.`)
   } else {
-    parts.push(`Slide ${slideNumber}/${totalSlides} — ${purpose.toLowerCase()}.`)
+    layers.push(`CANVAS: ${ds.colorApplication.backgroundFallback}`)
   }
 
-  // The message to convey
-  parts.push(`Message: "${headline}"`)
+  // LAYER 1 — Background treatment
+  if (bgSubject && ds.colorApplication.photoOverlay) {
+    layers.push(`\nLAYER 1 (Background): ${ds.colorApplication.photoOverlay}`)
+  } else {
+    const decorBg = ds.decorativeElements.find(e => /bokeh|particle|dot|gradient/i.test(e))
+    layers.push(`\nLAYER 1 (Background): Solid dark background.${decorBg ? ` ${decorBg}` : ''}`)
+  }
+
+  // LAYER 2 — Hero asset
+  if (heroAsset) {
+    layers.push(`\nLAYER 2 (Hero asset): ${heroAsset}`)
+  } else if (selectedVariation.includes('showcase') || selectedVariation.includes('asset')) {
+    const asset = ds.assetPalette[Math.min(slideNumber - 1, ds.assetPalette.length - 1)]
+    layers.push(`\nLAYER 2 (Hero asset): ${asset}`)
+  } else if (bgSubject) {
+    layers.push(`\nLAYER 2 (Hero asset): The photograph/image IS the hero — no separate asset needed.`)
+  } else {
+    layers.push(`\nLAYER 2 (Hero asset): None — text-dominant composition.`)
+  }
+
+  // LAYER 3 — Repeating chrome (navigation/category elements)
+  if (ds.repeatingChrome) {
+    const chromeLines: string[] = ['\nLAYER 3 (Navigation chrome):']
+    if (ds.repeatingChrome.topBar) {
+      const tb = ds.repeatingChrome.topBar
+      if (tb.left && tb.right) {
+        chromeLines.push(`- Top-left: "${tb.left}" in ${tb.style}`)
+        chromeLines.push(`- Top-right: "${tb.right}" in ${tb.style}`)
+      }
+    }
+    if (ds.repeatingChrome.bottomBar) {
+      const bb = ds.repeatingChrome.bottomBar
+      chromeLines.push(`- Bottom: ${bb.element || ''} — ${bb.style}`)
+    }
+    layers.push(chromeLines.join('\n'))
+  }
+
+  // LAYER 4 — Typography: Headline
+  const hl = ds.typographySystem.headline
+  const headlinePlacement = Array.isArray(hl.placement)
+    ? (slideNumber === 1 || slideNumber === totalSlides ? hl.placement[hl.placement.length - 1] : hl.placement[0])
+    : hl.placement
+  const accentInstruction = accentWords.length > 0
+    ? `Accent treatment on: ${accentWords.map(w => `"${w}"`).join(', ')}`
+    : (hl.effects?.[0] || '')
+
+  layers.push(`\nLAYER 4 (Typography — headline):
+- Position: ${headlinePlacement}
+- Text: "${headline}"
+- Style: ${hl.style}
+- Scale: ${hl.scale}
+- ${accentInstruction}`)
+
+  // LAYER 5 — Typography: Subtext
   if (subtext) {
-    parts.push(`Supporting: "${subtext}"`)
+    const body = ds.typographySystem.body
+    const bodyPlacement = Array.isArray(body.placement) ? body.placement[0] : body.placement
+    layers.push(`\nLAYER 5 (Typography — subtext):
+- Position: ${bodyPlacement}
+- Text: "${subtext}"
+- Style: ${body.style}
+- Scale: ${body.scale}`)
   }
 
-  // Visual concept from AI (if provided)
-  if (imageDesc) {
-    parts.push(`Visual concept: ${imageDesc}`)
+  // LAYER 6 — Decorative elements
+  const decorElements = ds.decorativeElements.slice(0, 4)
+  if (decorElements.length > 0) {
+    const categoryLabel = decorElements.find(e => /category|label|uppercase/i.test(e))
+    const otherElements = decorElements.filter(e => e !== categoryLabel).slice(0, 2)
+
+    const decorLines: string[] = ['\nLAYER 6 (Decorative):']
+    if (categoryLabel && purpose) {
+      decorLines.push(`- ${categoryLabel.replace(/\(.*?\)/, `("${purpose.toUpperCase()}")`)}`)
+    }
+    otherElements.forEach(e => decorLines.push(`- ${e}`))
+    layers.push(decorLines.join('\n'))
   }
 
-  // Brand-specific creative direction
-  if (brand.visualStyle?.aesthetic) {
-    parts.push(`Mood: ${brand.visualStyle.aesthetic}`)
+  // Add slide bullets if present
+  const bullets = slide.bullets && slide.bullets.length > 0 ? slide.bullets : []
+  if (bullets.length > 0) {
+    layers.push(`\nTEXT CONTENT (render as part of the design):
+${bullets.map((b, i) => `${String(i + 1).padStart(2, '0')}  ${b}`).join('\n')}`)
   }
 
-  if (brand.visualStyle?.imageGuidance) {
-    parts.push(`Visual Guidance: ${brand.visualStyle.imageGuidance}`)
+  // CTA if present
+  if (slide.cta) {
+    layers.push(`\nCTA ELEMENT: "${slide.cta}" — styled as ${ds.repeatingChrome?.bottomBar?.style || 'prominent button'}`)
   }
 
-  // Theme consistency
-  parts.push(`Art direction: ${theme.artDirection}`)
+  // Composition variation reference
+  layers.push(`\nCOMPOSITION PATTERN: ${selectedVariation}`)
 
-  return parts.join('\n')
+  // Campaign consistency
+  layers.push(`\nCAMPAIGN THREAD:
+- Art direction: ${theme.artDirection}
+- Consistency anchor: ${theme.consistencyAnchor}
+- Slide ${slideNumber} of ${totalSlides}`)
+
+  return layers.join('\n')
 }
 
 function normalizeAIContent(raw: unknown, brand: BrandConfig, totalSlides: number): AIContent {
@@ -275,10 +394,15 @@ function normalizeAIContent(raw: unknown, brand: BrandConfig, totalSlides: numbe
       imageDescription: asText(candidate.imageDescription),
       layout: asText(candidate.layout, 'full-composition'),
       compositionPrompt: '', // Will be filled below
+      // New Creative Director fields
+      photographySubject: asText(candidate.photographySubject),
+      compositionVariation: asText(candidate.compositionVariation),
+      accentWords: asStringArray(candidate.accentWords, 5),
+      heroAsset: asText(candidate.heroAsset),
     }
 
-    // Auto-generate a creative brief for the image
-    partial.compositionPrompt = generateCreativeBrief(
+    // Build the layered design spec (replaces old generateCreativeBrief)
+    partial.compositionPrompt = buildDesignSpec(
       brand,
       partial,
       i + 1,
@@ -372,7 +496,7 @@ async function generateWithAI(
     messages: [
       {
         role: 'user',
-        content: `Create an Instagram carousel about: "${topic}"\n\nReturn ONLY valid JSON, no markdown fences.`,
+        content: `Create a ${totalSlides}-slide Instagram carousel about: "${topic}"\n\nMake the copy sharp, specific, and scroll-stopping. Every headline should feel like it was written by the brand's best copywriter, not a template.\n\nReturn ONLY valid JSON, no markdown fences.`,
       },
     ],
   })
@@ -396,6 +520,12 @@ function buildSystemPrompt(
 ): string {
   const slideList =
     slideStructure.length > 0
+      ? slideStructure.map((s, i) => `  ${i + 1}. ${s}`).join('\n')
+      : Array.from({ length: totalSlides }, (_, i) => {
+          if (i === 0) return `  1. Hook — bold statement that stops the scroll`
+          if (i === totalSlides - 1) return `  ${totalSlides}. CTA — clear next step`
+          return `  ${i + 1}. Value slide — teach, prove, or agitate`
+        }).join('\n')
   const styleAnalysis = loadStyleAnalysis(brandSlug)
 
   const layoutHints = styleAnalysis?.layoutPatterns?.length
@@ -415,9 +545,44 @@ function buildSystemPrompt(
   const brandIdentity = identity
   const negativeRules = negatives
 
-  return `You are a world-class social creative director producing an Instagram carousel.
+  // Build voice direction from brand config
+  const voice = brand.contentVoice
+  const voiceBlock = voice
+    ? `BRAND VOICE (match this exactly):
+- Tone: ${voice.tone}
+- Perspective: ${voice.perspective}
+- Hook formulas to draw from:
+${voice.hooks.map(h => `  • "${h}"`).join('\n')}
+- CTA style: ${voice.ctaStyle}
+`
+    : ''
+
+  // Build design system guidance for Claude to understand available composition tools
+  const ds = brand.designSystem
+  const designSystemGuidance = ds
+    ? `DESIGN SYSTEM (use these for photographySubject, compositionVariation, heroAsset fields):
+
+Available composition variations (pick one per slide, vary across carousel):
+${ds.compositionVariations.map(v => `  • ${v}`).join('\n')}
+
+Available hero assets:
+${ds.assetPalette.map(a => `  • ${a}`).join('\n')}
+
+Photography subjects to draw from:
+${ds.photographyStyle.subjects.map(s => `  • ${s}`).join('\n')}
+
+Photography mood: ${ds.photographyStyle.mood}
+
+Typography: ${ds.typographySystem.headline.style} — accent treatment: ${ds.typographySystem.headline.effects?.join(', ') || 'color emphasis on key words'}
+`
+    : `DESIGN DIRECTION:
+Pick visual concepts that match the brand aesthetic. Use imageDescription to describe what the background should show.`
+
+  return `You are a world-class social creative director and copywriter producing an Instagram carousel for ${brand.name}.
 
 ${brandIdentity}
+
+${voiceBlock}
 
 VISUAL REFERENCE EXTRACTION (use only these design patterns, not colors/text from refs):
 - Layout patterns: ${layoutHints}
@@ -431,33 +596,50 @@ COPYWRITING RULES (CRITICAL):
 2. Headlines must be PUNCHY and SPECIFIC — not vague summaries
 3. Use concrete numbers, outcomes, and specifics when possible
 4. Each headline should make someone STOP scrolling
-5. Subtext should add value, not repeat the headline
-6. Bullets should be scannable insights, not filler
-7. NEVER use: "In today's world", "Unlock", "Revolutionary", "Discover", "Game-changer", "Seamless", "Leverage"
+5. Subtext should ADD NEW VALUE — never repeat or rephrase the headline
+6. Bullets should be scannable, specific insights with real takeaways — not filler
+7. NEVER use: "In today's world", "Unlock", "Revolutionary", "Discover", "Game-changer", "Seamless", "Leverage", "Elevate", "Harness", "Navigate", "Supercharge"
 8. Write like you're talking to a smart friend, not a boardroom
+9. Every slide must earn its place — if it doesn't teach, prove, or provoke, cut it
+10. Be SPECIFIC: use real numbers, timeframes, dollar amounts, tool names, or concrete outcomes
 
 HEADLINE EXAMPLES:
 - BAD: "The Framework That Works" (vague, boring)
 - GOOD: "I Saved 14 Hours a Week With This" (specific, outcome-focused)
 - BAD: "Understanding Your Audience" (generic)
 - GOOD: "Your Clients Don't Want What You're Selling" (provocative, hook)
+- BAD: "Tips for Better Results" (says nothing)
+- GOOD: "3 Automations That Replaced My $4K/mo Assistant" (specific, surprising)
+
+CAPTION RULES:
+- Open with a hook that makes people want to read more (question, bold claim, or story opener)
+- 2-4 short paragraphs max — punchy, not an essay
+- End with a clear CTA that matches the brand voice
+- Include relevant context about WHY this topic matters to the audience
+- NO generic filler like "Hope this helps!" or "Let me know in the comments!"
 
 GLOBAL REQUIREMENTS:
 1. ENGLISH ONLY. Perfect spelling.
 2. Every slide must feel like the same campaign, not random outputs.
 3. Headlines max 8 words, mark accent words with *asterisks*.
-4. For imageDescription, write a brief visual concept (not layout instructions)
+4. For imageDescription, write a SPECIFIC visual concept — what should the background photo/render/scene show.
+5. For photographySubject, describe the exact background image to generate (e.g., "golden hour pool deck with herringbone pavers" or "pop art style collage of marketing icons and charts").
+6. For compositionVariation, pick the layout pattern that best suits this slide's role in the carousel.
+7. For accentWords, pick 1-2 words from the headline that should get emphasis treatment (color, underline, or highlight).
+8. For heroAsset, describe any specific visual anchor element (3D object, cultural reference, product screenshot) — leave empty if the photo IS the hero.
 
-CAROUSEL STRUCTURE:
+${designSystemGuidance}
+
+CAROUSEL STRUCTURE (${totalSlides} slides):
 ${slideList}
 
 Return JSON exactly in this structure:
 {
   "strategy": {
-    "goal": "",
-    "targetAudience": "",
-    "hook": "",
-    "callToAction": ""
+    "goal": "specific measurable outcome",
+    "targetAudience": "specific person, not generic",
+    "hook": "the exact emotional trigger",
+    "callToAction": "specific next step"
   },
   "carouselTheme": {
     "artDirection": "",
@@ -470,16 +652,19 @@ Return JSON exactly in this structure:
     {
       "purpose": "",
       "headline": "with *accent* words",
-      "subtext": "",
-      "bullets": [""],
+      "subtext": "adds new info, never repeats headline",
+      "bullets": ["specific, actionable points"],
       "cta": "",
       "elements": [""],
-      "imageDescription": "",
-      "layout": "",
-      "compositionPrompt": ""
+      "imageDescription": "specific visual concept for the background scene",
+      "photographySubject": "exact description of background photo/render to generate",
+      "compositionVariation": "layout pattern name from the brand design system",
+      "accentWords": ["word1", "word2"],
+      "heroAsset": "specific visual anchor element, or empty if photo is the hero",
+      "layout": ""
     }
   ],
-  "caption": "",
+  "caption": "hook paragraph + value + CTA",
   "hashtags": [""]
 }
 

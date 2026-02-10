@@ -14,9 +14,9 @@ interface RefineRequest {
 function getBrandRules(brandSlug: string): string {
   if (brandSlug === 'servicegrowth-ai') {
     return `BRAND: ServiceGrowth AI
-COLORS (use ONLY these): #0D0D0D background, #00D4FF cyan accent, #FFFFFF text
-STYLE: Premium tech editorial, dark cinematic mood, modern sans-serif typography only
-DO NOT: script fonts, cursive, serif, pink/maroon/warm colors, Portuguese text, generic stock imagery`
+COLORS (use ONLY these): #0A0A1A dark navy-black background, #4F46E5 indigo accent, #6366F1 light indigo, #FFFFFF white text
+STYLE: Premium fintech/SaaS dark editorial. Extra-bold sans-serif headlines (very large, 2-4 words per line). Key words highlighted in indigo. 3D chrome/metallic objects or desaturated grayscale photography as visuals. Floating glassmorphism pill badges. Text-dominant layouts — imagery supports, never competes. Purple-blue gradient accents.
+DO NOT: neon cyan, teal, bright colors, warm tones, script fonts, cursive, serif, pink/maroon, Portuguese text, generic stock imagery, colorful stock photos, cartoon, illustration`
   }
 
   return `BRAND: Caviar Pavers

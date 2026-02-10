@@ -1,92 +1,132 @@
 'use client'
 
-import { Slide, BrandConfig } from '@/lib/types'
+import { Slide } from '@/lib/types'
 
 interface Props {
-  slide: Slide
-  brand: BrandConfig
+  slide: Slide | null
+  aspectRatio: '1:1' | '9:16'
+  accentColor: string
   brandSlug: string
-  isSelected?: boolean
-  onClick?: () => void
-  scale?: number
+  isGenerating: boolean
+  imageProgress: number
+  approvedSlides: Set<number>
+  onApprove: (slideNumber: number) => void
+  onRegenerate: (slideNumber: number) => void
 }
 
 export default function SlidePreview({
   slide,
-  brand,
+  aspectRatio,
+  accentColor,
   brandSlug,
-  isSelected,
-  onClick,
-  scale = 0.3,
+  isGenerating,
+  imageProgress,
+  approvedSlides,
+  onApprove,
+  onRegenerate,
 }: Props) {
   const isServiceGrowth = brandSlug === 'servicegrowth-ai'
-  const accentColor = isServiceGrowth
-    ? brand.colors.accent?.cyan || '#00D4FF'
-    : brand.colors.accent?.gold || '#C9A227'
 
-  const hasImage = slide.generatedImage || slide.backgroundImage
-  const imageUrl = slide.generatedImage || slide.backgroundImage
+  if (!slide) {
+    return (
+      <div
+        className="rounded-xl flex items-center justify-center"
+        style={{
+          aspectRatio: aspectRatio === '9:16' ? '9/16' : '1/1',
+          maxHeight: aspectRatio === '9:16' ? 640 : 500,
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <p className="text-white/20 text-sm">Generate copy to get started</p>
+      </div>
+    )
+  }
+
+  const isApproved = approvedSlides.has(slide.number)
+  const isThisSlideGenerating = isGenerating && imageProgress === slide.number
 
   return (
     <div
-      onClick={onClick}
-      className={`cursor-pointer transition-all duration-200 rounded-lg overflow-hidden ${
-        isSelected
-          ? 'ring-2 ring-offset-2 ring-offset-neutral-900'
-          : 'hover:ring-1 hover:ring-white/20'
-      }`}
+      className="relative rounded-xl overflow-hidden"
       style={{
-        width: `${1080 * scale}px`,
-        height: `${1080 * scale}px`,
-        ...(isSelected ? { ringColor: accentColor } : {}),
+        aspectRatio: aspectRatio === '9:16' ? '9/16' : '1/1',
+        maxHeight: aspectRatio === '9:16' ? 640 : 500,
+        border: '1px solid rgba(255,255,255,0.1)',
       }}
-      data-slide-number={slide.number}
     >
-      {hasImage ? (
+      {slide.generatedImage ? (
         <img
-          src={imageUrl}
+          src={slide.generatedImage}
           alt={`Slide ${slide.number}`}
           className="w-full h-full object-cover"
-          draggable={false}
+          data-slide-number={slide.number}
         />
       ) : (
-        /* Placeholder when no image generated yet */
         <div
-          className="w-full h-full flex flex-col items-center justify-center gap-3 p-4"
+          className="w-full h-full flex flex-col items-center justify-center gap-4 p-8"
           style={{
             background: isServiceGrowth
-              ? 'linear-gradient(135deg, #0D0D0D, #111118)'
+              ? 'linear-gradient(135deg, #0A0A1A, #12122A)'
               : 'linear-gradient(135deg, #1E3A5F, #2a1a10)',
           }}
         >
-          <div
-            className="text-center font-bold leading-tight"
+          <div className="text-white/50 text-center text-lg font-medium max-w-md">
+            {slide.headline?.replace(/\*/g, '')}
+          </div>
+          <div className="text-white/30 text-center text-sm max-w-sm">
+            {slide.subtext}
+          </div>
+          {!isGenerating && (
+            <div className="mt-4 text-white/15 text-xs">
+              Click "Generate" to create this slide's image
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Loading overlay */}
+      {isThisSlideGenerating && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+          <span
+            className="animate-spin inline-block w-8 h-8 border-[3px] border-white/10 rounded-full"
+            style={{ borderTopColor: accentColor }}
+          />
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {slide.generatedImage && !isThisSlideGenerating && (
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+          <button
+            onClick={() => onApprove(slide.number)}
+            disabled={isApproved}
+            className="px-3 py-1.5 rounded-lg text-[10px] font-medium cursor-pointer transition-all"
             style={{
-              fontSize: `${Math.max(11, 14 * scale / 0.3)}px`,
+              background: isApproved ? 'rgba(34,197,94,0.2)' : 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(8px)',
+              border: isApproved
+                ? '1px solid rgba(34,197,94,0.4)'
+                : '1px solid rgba(255,255,255,0.1)',
+              color: isApproved ? '#22c55e' : 'rgba(255,255,255,0.7)',
+            }}
+          >
+            {isApproved ? 'Approved' : 'Approve'}
+          </button>
+
+          <button
+            onClick={() => onRegenerate(slide.number)}
+            disabled={isGenerating}
+            className="px-3 py-1.5 rounded-lg text-[10px] font-medium cursor-pointer transition-all"
+            style={{
+              background: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.1)',
               color: 'rgba(255,255,255,0.7)',
             }}
           >
-            {slide.headline?.replace(/\*/g, '')}
-          </div>
-          <div
-            className="text-center leading-snug"
-            style={{
-              fontSize: `${Math.max(8, 10 * scale / 0.3)}px`,
-              color: 'rgba(255,255,255,0.35)',
-            }}
-          >
-            {slide.subtext}
-          </div>
-          <div
-            className="mt-2 px-2 py-0.5 rounded text-center"
-            style={{
-              fontSize: `${Math.max(7, 8 * scale / 0.3)}px`,
-              background: `${accentColor}22`,
-              color: accentColor,
-            }}
-          >
-            Slide {slide.number} — Click Generate
-          </div>
+            Regenerate
+          </button>
         </div>
       )}
     </div>

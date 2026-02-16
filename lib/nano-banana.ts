@@ -37,109 +37,24 @@ interface GenerateImageOptions {
   approvedGuidance?: string
 }
 
-const DESIGN_PRINCIPLES = `DESIGN FUNDAMENTALS (apply to every image):
-- Use rule of thirds for element placement — align key elements along grid lines and intersections
-- Maintain clear visual hierarchy: primary headline > supporting text > background elements
-- Use consistent alignment — left-align or center-align text blocks, never mix randomly
-- Ensure adequate whitespace/breathing room between elements — avoid crowding
-- Typography should have clear size contrast between headline, subtext, and body
-- Balance visual weight across the composition — don't cluster everything in one corner
-- Use color contrast to guide the eye to the most important element first`
-
-// Brand context - what the business is about
-function getBrandContext(brandConfig?: any): { colors: string; business: string; negatives: string; designSystemBlock: string } {
-  if (!brandConfig) {
-    return {
-      colors: 'Use professional high-contrast colors.',
-      business: 'Professional Service Business',
-      negatives: '',
-      designSystemBlock: '',
-    }
-  }
-
-  // Collect ALL color categories (primary, secondary, accent, text, neutral)
-  const colorSections: string[] = []
+// Collect brand colors as a simple list
+function getBrandColors(brandConfig?: any): string {
+  if (!brandConfig?.colors) return 'Professional high-contrast colors.'
+  const colors: string[] = []
   for (const [section, values] of Object.entries(brandConfig.colors || {})) {
     if (section === 'meaning' || typeof values !== 'object' || !values) continue
-    const entries = Object.entries(values as Record<string, string>)
-      .filter(([, v]) => typeof v === 'string' && v.startsWith('#'))
-      .map(([key, val]) => `  ${key}: ${val}`)
-    if (entries.length) {
-      colorSections.push(`${section}:\n${entries.join('\n')}`)
+    for (const [key, val] of Object.entries(values as Record<string, string>)) {
+      if (typeof val === 'string' && val.startsWith('#')) {
+        colors.push(`${key}: ${val}`)
+      }
     }
   }
-
-  // Build designSystem block if available
-  let designSystemBlock = ''
-  const ds = brandConfig.designSystem
-  if (ds) {
-    const parts: string[] = ['DESIGN SYSTEM (follow these rules precisely):']
-
-    // Typography system
-    if (ds.typographySystem) {
-      parts.push(`\nTYPOGRAPHY:`)
-      parts.push(`- Headline: ${ds.typographySystem.headline?.style || 'Bold sans-serif'}`)
-      parts.push(`- Headline scale: ${ds.typographySystem.headline?.scale || 'Large'}`)
-      if (ds.typographySystem.headline?.effects?.length) {
-        parts.push(`- Headline effects: ${ds.typographySystem.headline.effects.join('; ')}`)
-      }
-      parts.push(`- Body: ${ds.typographySystem.body?.style || 'Regular sans-serif'}`)
-      if (ds.typographySystem.accent) {
-        parts.push(`- Accent: ${ds.typographySystem.accent.style} — ${ds.typographySystem.accent.usage || ''}`)
-      }
-    }
-
-    // Repeating chrome
-    if (ds.repeatingChrome) {
-      parts.push(`\nREPEATING CHROME (include on EVERY slide):`)
-      if (ds.repeatingChrome.topBar) {
-        const tb = ds.repeatingChrome.topBar
-        if (tb.left) parts.push(`- Top-left: "${tb.left}" — ${tb.style}`)
-        if (tb.right) parts.push(`- Top-right: "${tb.right}" — ${tb.style}`)
-      }
-      if (ds.repeatingChrome.bottomBar) {
-        const bb = ds.repeatingChrome.bottomBar
-        parts.push(`- Bottom: ${bb.element || ''} — ${bb.style}`)
-      }
-    }
-
-    // Decorative elements
-    if (ds.decorativeElements?.length) {
-      parts.push(`\nDECORATIVE ELEMENTS:`)
-      ds.decorativeElements.slice(0, 5).forEach((e: string) => parts.push(`- ${e}`))
-    }
-
-    // Color application
-    if (ds.colorApplication) {
-      parts.push(`\nCOLOR APPLICATION:`)
-      if (ds.colorApplication.photoOverlay) parts.push(`- Photo overlay: ${ds.colorApplication.photoOverlay}`)
-      parts.push(`- Text primary: ${ds.colorApplication.textPrimary}`)
-      parts.push(`- Text accent: ${ds.colorApplication.textAccent}`)
-      parts.push(`- Background fallback: ${ds.colorApplication.backgroundFallback}`)
-    }
-
-    // Photography mood
-    if (ds.photographyStyle?.mood) {
-      parts.push(`\nPHOTOGRAPHY MOOD: ${ds.photographyStyle.mood}`)
-    }
-
-    designSystemBlock = parts.join('\n')
-  }
-
-  return {
-    colors: colorSections.join('\n') || 'Use professional high-contrast colors.',
-    business: `Content should show: ${brandConfig.visualStyle?.aesthetic || 'Professional imagery'}
-(Do NOT render the brand name, company name, or tagline as text in the image)`,
-    negatives: brandConfig.visualStyle?.negativePrompt
-      ? `DO NOT: ${brandConfig.visualStyle.negativePrompt}`
-      : '',
-    designSystemBlock,
-  }
+  return colors.join(', ') || 'Professional high-contrast colors.'
 }
 
-// Build prompt with topic context
+// Build the scene-only prompt — NO TEXT, just visuals
 function buildFinalPrompt(
-  userPrompt: string,
+  sceneDescription: string,
   hasReferences: boolean,
   brandConfig?: any,
   customDirection?: string,
@@ -149,103 +64,58 @@ function buildFinalPrompt(
   aspectRatio?: '1:1' | '9:16',
   approvedGuidance?: string
 ): string {
-  // userPrompt = Claude's compositionPrompt (rich layered design spec or creative brief)
-  // customDirection = user's global creative direction (supplements, doesn't replace)
-  const slideContext = userPrompt?.trim() || ''
+  const scene = sceneDescription?.trim() || ''
   const creativeDirection = customDirection?.trim() || ''
-  const { colors, business, negatives, designSystemBlock } = getBrandContext(brandConfig)
-
-  const contentContext = topic
-    ? `CONTENT TOPIC: ${topic}${slideHeadline ? `\nThis slide's message: "${slideHeadline}"` : ''}`
+  const colors = getBrandColors(brandConfig)
+  const negatives = brandConfig?.visualStyle?.negativePrompt
+    ? `DO NOT: ${brandConfig.visualStyle.negativePrompt}`
     : ''
-
   const imageGuidance = brandConfig?.visualStyle?.imageGuidance
-    ? `IMAGE GUIDANCE: ${brandConfig.visualStyle.imageGuidance}`
+    ? `STYLE: ${brandConfig.visualStyle.imageGuidance}`
     : ''
+  const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical' : '1080x1080 square'
+  const mood = brandConfig?.designSystem?.photographyStyle?.mood
+    || brandConfig?.visualStyle?.aesthetic
+    || 'Professional quality'
 
-  const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical (9:16 portrait)' : '1080x1080 square'
-
-  // Visual style for this slide
   const themeBlock = carouselTheme
-    ? `VISUAL STYLE (apply to this single slide):
-- Art direction: ${carouselTheme.artDirection || 'Professional editorial'}
-- Lighting: ${carouselTheme.lighting || 'Balanced professional lighting'}
-- Framing: ${carouselTheme.framing || 'Clear hierarchy'}
-- Texture/motif: ${carouselTheme.textureMotif || 'Clean surfaces'}
-- Consistency anchor: ${carouselTheme.consistencyAnchor || 'Brand colors and typography'}`
-    : ''
+    ? `Art direction: ${carouselTheme.artDirection || 'Professional'}
+Lighting: ${carouselTheme.lighting || 'Balanced'}
+Mood: ${mood}`
+    : `Mood: ${mood}`
 
-  // Determine if the slide context is a full layered spec (from buildDesignSpec) or a basic brief
-  const compositionLabel = slideContext.includes('CANVAS:') || slideContext.includes('LAYER ')
-    ? 'LAYERED DESIGN SPECIFICATION (follow this Photoshop-like layer stack):'
-    : 'SLIDE COMPOSITION:'
+  const noTextRule = `BACKGROUND IMAGE ONLY — do NOT render any text, words, letters, numbers, labels, watermarks, logos, or typography. The image must contain ZERO text. Text will be added programmatically.
+
+Leave the bottom 30-40% slightly darker or simpler for text overlay space.`
 
   if (hasReferences) {
-    return `COPY THE VISUAL STYLE of the reference images, but create NEW CONTENT about the brand.
+    return `Match the VISUAL STYLE of the reference images (composition, lighting, color treatment, mood).
+Do NOT copy any text or words from references.
 
-CRITICAL: Do NOT copy the text or subject matter from references. Only copy the DESIGN STYLE.
+${noTextRule}
 
-${DESIGN_PRINCIPLES}
+SCENE: ${scene || 'Premium background scene matching the reference style.'}
 
-${business}
-
-${contentContext}
-
-Match from references (STYLE ONLY):
-- Layout composition and visual hierarchy
-- Typography style and font treatment
-- Design elements and aesthetic
-
-Brand colors (USE THESE EXACTLY):
-${colors}
-
-${designSystemBlock}
-
+Brand colors (for lighting and accents): ${colors}
 ${themeBlock}
-
 ${imageGuidance}
-
-${compositionLabel}
-${slideContext || 'Create a premium, high-quality slide for this brand/topic.'}
-
-${creativeDirection ? `CREATIVE DIRECTION:\n${creativeDirection}` : ''}
-
+${creativeDirection ? `Direction: ${creativeDirection}` : ''}
 ${negatives}
 
-${approvedGuidance || ''}
-
-CRITICAL: Generate exactly ONE single image. Do NOT create a grid, collage, multiple panels, or side-by-side layout.
-ENGLISH ONLY. No Portuguese or Spanish. Perfect spelling.
-${dimensions}. DO NOT include any logo, brand name, company name, tagline, or watermark text in the image. The user will add branding separately.`
+One single image. No grid or collage. ${dimensions}.`
   }
 
-  return `${DESIGN_PRINCIPLES}
+  return `${noTextRule}
 
-${business}
+SCENE: ${scene || 'Premium professional background scene.'}
 
-${contentContext}
-
-Brand colors (USE THESE EXACTLY):
-${colors}
-
-${designSystemBlock}
-
+Brand colors (for lighting and accents): ${colors}
 ${themeBlock}
-
 ${imageGuidance}
-
-${compositionLabel}
-${slideContext || 'Create a premium, high-quality slide for this brand/topic.'}
-
-${creativeDirection ? `CREATIVE DIRECTION:\n${creativeDirection}` : ''}
-
+${creativeDirection ? `Direction: ${creativeDirection}` : ''}
 ${negatives}
 
-${approvedGuidance || ''}
-
-CRITICAL: Generate exactly ONE single image. Do NOT create a grid, collage, multiple panels, or side-by-side layout.
-ENGLISH ONLY. Perfect spelling.
-${dimensions}. DO NOT include any logo, brand name, company name, tagline, or watermark text in the image. The user will add branding separately.`
+One single image. No grid or collage. ${dimensions}.`
 }
 
 // Build approved image guidance from metadata (TEXT only, no binary)
@@ -254,20 +124,14 @@ export function buildApprovedImageGuidance(approvedImages: Record<string, unknow
 
   const examples = approvedImages.slice(0, 5).map((img, i) => {
     const parts: string[] = []
-    if (img.headline) parts.push(`Headline: "${img.headline}"`)
     if (img.compositionPrompt) {
       const prompt = String(img.compositionPrompt)
-      parts.push(`Composition: ${prompt.length > 200 ? prompt.slice(0, 200) + '...' : prompt}`)
+      parts.push(`Scene: ${prompt.length > 200 ? prompt.slice(0, 200) + '...' : prompt}`)
     }
-    if (img.globalDirection) {
-      const dir = String(img.globalDirection)
-      parts.push(`Direction: ${dir.length > 150 ? dir.slice(0, 150) + '...' : dir}`)
-    }
-    return `  Example ${i + 1}:\n    ${parts.join('\n    ')}`
+    return `  Example ${i + 1}: ${parts.join(', ')}`
   })
 
-  return `QUALITY BENCHMARKS (these slides were approved — match this quality level):
-${examples.join('\n')}`
+  return `QUALITY BENCHMARKS (match this visual quality):\n${examples.join('\n')}`
 }
 
 export async function generateImage(

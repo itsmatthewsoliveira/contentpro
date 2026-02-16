@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { BrandConfig, Brief, Slide } from '@/lib/types'
 import SlideList from '@/components/SlideList'
@@ -61,6 +61,9 @@ function GenerateWorkspace() {
 
   // Brand Kit modal
   const [showBrandKit, setShowBrandKit] = useState(false)
+
+  // Debounce timer for re-composite
+  const recompositeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Errors
   const [error, setError] = useState<string | null>(null)
@@ -129,6 +132,37 @@ function GenerateWorkspace() {
     return `${positionContext}\n\nSLIDE CONTENT:\nHeadline: "${headline}"\n${subtext ? `Supporting text: "${subtext}"` : ''}\n${slide.imageDescription ? `Visual concept: ${slide.imageDescription}` : ''}\n\nCreate a visually compelling Instagram slide that communicates this message.`
   }
 
+  // ── Composite text on background ──
+  const compositeText = async (bgBase64: string, slide: Slide): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/composite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          backgroundBase64: bgBase64,
+          brandSlug,
+          slide: {
+            headline: slide.headline?.replace(/\*/g, '') || '',
+            subtext: slide.subtext || undefined,
+            cta: slide.cta || undefined,
+            accentWords: slide.accentWords || [],
+            purpose: slide.purpose || undefined,
+            number: slide.number,
+            totalSlides: slide.totalSlides,
+          },
+          aspectRatio,
+        }),
+      })
+      const data = await res.json()
+      if (data.imageBase64) {
+        return `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
+      }
+    } catch (err) {
+      console.error('Composite failed:', err)
+    }
+    return null
+  }
+
   // ── Generate All Images ──
   const handleGenerateImages = async () => {
     if (!brief || !brand) return
@@ -163,8 +197,19 @@ function GenerateWorkspace() {
         if (!res.ok || data.error) throw new Error(data.error || 'Generation failed')
 
         if (data.imageBase64) {
-          const finalImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
-          updatedSlides[i] = { ...slide, generatedImage: finalImage }
+          // Store the raw background
+          const bgBase64 = data.imageBase64
+          updatedSlides[i] = { ...slide, backgroundImage: `data:${data.mimeType || 'image/png'};base64,${bgBase64}` }
+
+          // Composite text on top
+          const composited = await compositeText(bgBase64, slide)
+          if (composited) {
+            updatedSlides[i] = { ...updatedSlides[i], generatedImage: composited }
+          } else {
+            // Fallback: show raw background if composite fails
+            updatedSlides[i] = { ...updatedSlides[i], generatedImage: updatedSlides[i].backgroundImage }
+          }
+
           setImageErrors((prev) => { const next = { ...prev }; delete next[slide.number]; return next })
           setBrief({ ...brief, slides: [...updatedSlides] })
         }
@@ -208,8 +253,19 @@ function GenerateWorkspace() {
       })
       const data = await res.json()
       if (data.imageBase64) {
-        const finalImage = `data:${data.mimeType || 'image/png'};base64,${data.imageBase64}`
-        setBrief({ ...brief, slides: brief.slides.map(s => s.number === slideNumber ? { ...s, generatedImage: finalImage } : s) })
+        const bgBase64 = data.imageBase64
+        const bgDataUrl = `data:${data.mimeType || 'image/png'};base64,${bgBase64}`
+
+        // Composite text on the new background
+        const composited = await compositeText(bgBase64, slide)
+        setBrief({
+          ...brief,
+          slides: brief.slides.map(s =>
+            s.number === slideNumber
+              ? { ...s, backgroundImage: bgDataUrl, generatedImage: composited || bgDataUrl }
+              : s
+          ),
+        })
       }
     } catch (err) {
       console.error('Regenerate failed:', err)
@@ -218,6 +274,24 @@ function GenerateWorkspace() {
       setImageProgress(0)
     }
   }, [brief, brand, brandSlug, imageEngine, imageModel, globalDirection, aspectRatio])
+
+  // ── Re-composite text when slide copy changes ──
+  const handleRecomposite = useCallback(async (slide: Slide) => {
+    if (!slide.backgroundImage) return
+    // Extract base64 from data URL
+    const match = slide.backgroundImage.match(/^data:image\/\w+;base64,(.+)$/)
+    if (!match) return
+
+    const composited = await compositeText(match[1], slide)
+    if (composited && brief) {
+      setBrief({
+        ...brief,
+        slides: brief.slides.map(s =>
+          s.number === slide.number ? { ...s, generatedImage: composited } : s
+        ),
+      })
+    }
+  }, [brief, brandSlug, aspectRatio])
 
   // ── Approve Slide ──
   const handleApproveSlide = useCallback(async (slideNumber: number) => {
@@ -259,8 +333,22 @@ function GenerateWorkspace() {
   // ── Update Slide Copy ──
   const handleSlideUpdate = useCallback((updated: Slide) => {
     if (!brief) return
+    const oldSlide = brief.slides.find(s => s.number === updated.number)
     setBrief({ ...brief, slides: brief.slides.map(s => s.number === updated.number ? updated : s) })
-  }, [brief])
+
+    // If text changed and we have a background image, re-composite
+    if (updated.backgroundImage && oldSlide && (
+      oldSlide.headline !== updated.headline ||
+      oldSlide.subtext !== updated.subtext ||
+      oldSlide.cta !== updated.cta
+    )) {
+      // Debounce: wait 500ms after last keystroke
+      if (recompositeTimer.current) clearTimeout(recompositeTimer.current)
+      recompositeTimer.current = setTimeout(() => {
+        handleRecomposite(updated)
+      }, 500)
+    }
+  }, [brief, handleRecomposite])
 
   // ── Slide Management ──
   const handleReorderSlides = useCallback((fromIndex: number, toIndex: number) => {

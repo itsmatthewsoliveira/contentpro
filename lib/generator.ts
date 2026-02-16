@@ -159,59 +159,45 @@ function enrichCompositionPrompt(
   slideNumber: number,
   totalSlides: number
 ): string {
-  const { identity, negatives } = getBrandPromptRules(brand)
-  const headline = asText(slide.headline)
-  const subtext = asText(slide.subtext)
-  const ds = brand.designSystem
+  const { negatives } = getBrandPromptRules(brand)
 
-  // If we have a designSystem, the basePrompt is already a full layered spec
-  const compositionBlock = ds
-    ? `LAYERED DESIGN SPECIFICATION:\n${basePrompt}`
-    : `COMPOSITION BRIEF:\n${basePrompt}`
+  // Collect all brand colors
+  const colorList: string[] = []
+  for (const [section, values] of Object.entries(brand.colors || {})) {
+    if (section === 'meaning' || typeof values !== 'object' || !values) continue
+    for (const [key, val] of Object.entries(values as Record<string, string>)) {
+      if (typeof val === 'string' && val.startsWith('#')) {
+        colorList.push(`${key}: ${val}`)
+      }
+    }
+  }
 
-  // Build typography system rules if designSystem exists
-  const typographyBlock = ds
-    ? `\nTYPOGRAPHY SYSTEM (follow exactly):
-- Headline: ${ds.typographySystem.headline.style}, scale ${ds.typographySystem.headline.scale}
-- Body: ${ds.typographySystem.body.style}, scale ${ds.typographySystem.body.scale}
-${ds.typographySystem.accent ? `- Accent: ${ds.typographySystem.accent.style} — ${ds.typographySystem.accent.usage}` : ''}`
-    : ''
+  return `BACKGROUND IMAGE ONLY — do NOT render any text, words, letters, numbers, labels, or typography.
 
-  return `${identity}
+SCENE DESCRIPTION:
+${basePrompt}
 
-VISUAL STYLE (apply to this single slide):
+BRAND COLORS (use these for lighting, accents, and atmosphere):
+${colorList.join(', ')}
+
+VISUAL STYLE:
 - Art direction: ${theme.artDirection}
 - Lighting: ${theme.lighting}
-- Framing: ${theme.framing}
-- Texture motif: ${theme.textureMotif}
-- Consistency anchor: ${theme.consistencyAnchor}
-${typographyBlock}
+- Mood: ${brand.visualStyle?.aesthetic || 'Professional'}
 
-SLIDE CONTEXT:
-- Slide ${slideNumber}/${totalSlides}
-- Headline: ${headline || 'N/A'}
-- Subtext: ${subtext || 'N/A'}
-
-${compositionBlock}
-
-DESIGN FUNDAMENTALS:
-- Use rule of thirds for element placement — align key elements along grid lines and intersections
-- Maintain clear visual hierarchy: primary headline > supporting text > background elements
-- Use consistent alignment — left-align or center-align text blocks, never mix randomly
-- Ensure adequate whitespace between elements — avoid crowding
-- Balance visual weight across the composition
-
-EXECUTION QUALITY BAR:
-- Generate exactly ONE single image — do NOT create a grid, collage, or multiple panels
-- 1080x1080 Instagram-ready design
-- Professional design output, not generic AI stock style
-- DO NOT include any logo, brand name, company name, tagline, or watermark text
-- ${brand.visualStyle?.imageGuidance || 'High quality professional look'}
+REQUIREMENTS:
+- Generate exactly ONE single image — no grid, collage, or multiple panels
+- 1080x1080 pixels
+- ZERO text in the image — no words, no letters, no numbers, no labels, no watermarks
+- Text will be added programmatically after generation
+- Leave the bottom 30-40% of the image slightly darker/simpler for text overlay space
+- Professional quality, not generic AI stock
 
 ${negatives}`
 }
 
-// Build a Photoshop-level layered design spec — the exact thought process a designer goes through
+// Build a scene-only description — NO TEXT, just the visual background/3D object
+// Text will be composited programmatically after image generation
 function buildDesignSpec(
   brand: BrandConfig,
   slide: Partial<Slide>,
@@ -220,145 +206,54 @@ function buildDesignSpec(
   theme: CarouselTheme
 ): string {
   const ds = brand.designSystem
-  const headline = asText(slide.headline).replace(/\*/g, '')
-  const subtext = asText(slide.subtext)
-  const purpose = asText(slide.purpose)
   const imageDesc = asText(slide.imageDescription)
   const photographySubject = asText(slide.photographySubject)
-  const compositionVariation = asText(slide.compositionVariation)
   const heroAsset = asText(slide.heroAsset)
-  const accentWords = slide.accentWords || []
+  const purpose = asText(slide.purpose)
 
-  // If no designSystem, fall back to the old brief style
+  // No designSystem: simple scene description
   if (!ds) {
     const parts: string[] = []
-    if (slideNumber === 1) parts.push('Opening hook slide — grab attention.')
-    else if (slideNumber === totalSlides) parts.push('Final CTA slide — clear call to action.')
-    else parts.push(`Slide ${slideNumber}/${totalSlides} — ${purpose.toLowerCase()}.`)
-    parts.push(`Message: "${headline}"`)
-    if (subtext) parts.push(`Supporting: "${subtext}"`)
-    if (imageDesc) parts.push(`Visual concept: ${imageDesc}`)
-    if (brand.visualStyle?.aesthetic) parts.push(`Mood: ${brand.visualStyle.aesthetic}`)
+    if (photographySubject) parts.push(photographySubject)
+    else if (heroAsset) parts.push(heroAsset)
+    else if (imageDesc) parts.push(imageDesc)
+    else parts.push(`Professional background scene for ${purpose.toLowerCase()} slide`)
+    parts.push(`Mood: ${brand.visualStyle?.aesthetic || 'Professional'}`)
     parts.push(`Art direction: ${theme.artDirection}`)
     return parts.join('\n')
   }
 
-  // Find the matching composition variation description
-  const selectedVariation = compositionVariation
-    ? ds.compositionVariations.find(v => v.startsWith(compositionVariation + ':')) || ds.compositionVariations[0]
-    : ds.compositionVariations[Math.min(slideNumber - 1, ds.compositionVariations.length - 1)]
+  // With designSystem: build a focused scene description
+  const lines: string[] = []
 
-  // Build layered canvas spec
-  const layers: string[] = []
-
-  // CANVAS — the foundation
-  const bgSubject = photographySubject || imageDesc
-  if (bgSubject && (selectedVariation.includes('culture-hero') || selectedVariation.includes('split-editorial') || selectedVariation.includes('full-bleed'))) {
-    layers.push(`CANVAS: Full-bleed photograph/image — ${bgSubject}. ${ds.photographyStyle.treatment.split('.')[0]}.`)
+  // The hero visual element
+  const heroObj = heroAsset || photographySubject || imageDesc
+  if (heroObj) {
+    lines.push(`HERO ELEMENT: ${heroObj}`)
+    lines.push(`Position the main visual element using rule of thirds.`)
+    lines.push(`Leave the bottom 30-40% of the image darker/simpler — text will be overlaid there.`)
   } else {
-    layers.push(`CANVAS: ${ds.colorApplication.backgroundFallback}`)
-  }
-
-  // LAYER 1 — Background treatment
-  if (bgSubject && ds.colorApplication.photoOverlay) {
-    layers.push(`\nLAYER 1 (Background): ${ds.colorApplication.photoOverlay}`)
-  } else {
-    const decorBg = ds.decorativeElements.find(e => /bokeh|particle|dot|gradient/i.test(e))
-    layers.push(`\nLAYER 1 (Background): Solid dark background.${decorBg ? ` ${decorBg}` : ''}`)
-  }
-
-  // LAYER 2 — Hero asset
-  if (heroAsset) {
-    layers.push(`\nLAYER 2 (Hero asset): ${heroAsset}`)
-  } else if (selectedVariation.includes('showcase') || selectedVariation.includes('asset')) {
+    // Fallback: pick from asset palette
     const asset = ds.assetPalette[Math.min(slideNumber - 1, ds.assetPalette.length - 1)]
-    layers.push(`\nLAYER 2 (Hero asset): ${asset}`)
-  } else if (bgSubject) {
-    layers.push(`\nLAYER 2 (Hero asset): The photograph/image IS the hero — no separate asset needed.`)
-  } else {
-    layers.push(`\nLAYER 2 (Hero asset): None — text-dominant composition.`)
-  }
-
-  // LAYER 3 — Repeating chrome (navigation/category elements)
-  if (ds.repeatingChrome) {
-    const chromeLines: string[] = ['\nLAYER 3 (Navigation chrome):']
-    if (ds.repeatingChrome.topBar) {
-      const tb = ds.repeatingChrome.topBar
-      if (tb.left && tb.right) {
-        chromeLines.push(`- Top-left: "${tb.left}" in ${tb.style}`)
-        chromeLines.push(`- Top-right: "${tb.right}" in ${tb.style}`)
-      }
+    if (asset) {
+      lines.push(`HERO ELEMENT: ${asset}`)
+      lines.push(`Leave bottom 30-40% darker for text overlay.`)
     }
-    if (ds.repeatingChrome.bottomBar) {
-      const bb = ds.repeatingChrome.bottomBar
-      chromeLines.push(`- Bottom: ${bb.element || ''} — ${bb.style}`)
-    }
-    layers.push(chromeLines.join('\n'))
   }
 
-  // LAYER 4 — Typography: Headline
-  const hl = ds.typographySystem.headline
-  const headlinePlacement = Array.isArray(hl.placement)
-    ? (slideNumber === 1 || slideNumber === totalSlides ? hl.placement[hl.placement.length - 1] : hl.placement[0])
-    : hl.placement
-  const accentInstruction = accentWords.length > 0
-    ? `Accent treatment on: ${accentWords.map(w => `"${w}"`).join(', ')}`
-    : (hl.effects?.[0] || '')
+  // Background
+  lines.push(`\nBACKGROUND: ${ds.colorApplication.backgroundFallback}`)
 
-  layers.push(`\nLAYER 4 (Typography — headline):
-- Position: ${headlinePlacement}
-- Text: "${headline}"
-- Style: ${hl.style}
-- Scale: ${hl.scale}
-- ${accentInstruction}`)
-
-  // LAYER 5 — Typography: Subtext
-  if (subtext) {
-    const body = ds.typographySystem.body
-    const bodyPlacement = Array.isArray(body.placement) ? body.placement[0] : body.placement
-    layers.push(`\nLAYER 5 (Typography — subtext):
-- Position: ${bodyPlacement}
-- Text: "${subtext}"
-- Style: ${body.style}
-- Scale: ${body.scale}`)
+  // Photography mood
+  if (ds.photographyStyle?.mood) {
+    lines.push(`MOOD: ${ds.photographyStyle.mood}`)
   }
 
-  // LAYER 6 — Decorative elements
-  const decorElements = ds.decorativeElements.slice(0, 4)
-  if (decorElements.length > 0) {
-    const categoryLabel = decorElements.find(e => /category|label|uppercase/i.test(e))
-    const otherElements = decorElements.filter(e => e !== categoryLabel).slice(0, 2)
+  // Art direction
+  lines.push(`ART DIRECTION: ${theme.artDirection}`)
+  lines.push(`Slide ${slideNumber} of ${totalSlides}`)
 
-    const decorLines: string[] = ['\nLAYER 6 (Decorative):']
-    if (categoryLabel && purpose) {
-      decorLines.push(`- ${categoryLabel.replace(/\(.*?\)/, `("${purpose.toUpperCase()}")`)}`)
-    }
-    otherElements.forEach(e => decorLines.push(`- ${e}`))
-    layers.push(decorLines.join('\n'))
-  }
-
-  // Add slide bullets if present
-  const bullets = slide.bullets && slide.bullets.length > 0 ? slide.bullets : []
-  if (bullets.length > 0) {
-    layers.push(`\nTEXT CONTENT (render as part of the design):
-${bullets.map((b, i) => `${String(i + 1).padStart(2, '0')}  ${b}`).join('\n')}`)
-  }
-
-  // CTA if present
-  if (slide.cta) {
-    layers.push(`\nCTA ELEMENT: "${slide.cta}" — styled as ${ds.repeatingChrome?.bottomBar?.style || 'prominent button'}`)
-  }
-
-  // Composition variation reference
-  layers.push(`\nCOMPOSITION PATTERN: ${selectedVariation}`)
-
-  // Campaign consistency
-  layers.push(`\nCAMPAIGN THREAD:
-- Art direction: ${theme.artDirection}
-- Consistency anchor: ${theme.consistencyAnchor}
-- Slide ${slideNumber} of ${totalSlides}`)
-
-  return layers.join('\n')
+  return lines.join('\n')
 }
 
 function normalizeAIContent(raw: unknown, brand: BrandConfig, totalSlides: number): AIContent {

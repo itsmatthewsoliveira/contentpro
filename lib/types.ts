@@ -144,7 +144,7 @@ export interface Slide {
   cta?: string | null
   elements?: string[]
   imageDescription: string
-  compositionPrompt: string // Full Nano Banana prompt for complete slide image
+  compositionPrompt: string // Scene description for background image generation
   layout: string
   totalSlides: number
   tag?: string
@@ -153,8 +153,8 @@ export interface Slide {
   compositionVariation?: string
   accentWords?: string[]
   heroAsset?: string
-  generatedImage?: string // base64 data URL from Nano Banana
-  backgroundImage?: string // user-uploaded background (legacy/override)
+  generatedImage?: string // Final composited image (background + text overlay)
+  backgroundImage?: string // Raw background image without text (for re-compositing)
 }
 
 export interface BriefStrategy {

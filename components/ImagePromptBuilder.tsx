@@ -78,7 +78,7 @@ export default function ImagePromptBuilder({
               Slide {slide.number} Image Prompt
             </h4>
             <p className="text-[10px] text-white/30 mt-0.5">
-              {slide.purpose} — "{slide.headline?.replace(/\*/g, '').slice(0, 40)}..."
+              {slide.purpose} &mdash; &ldquo;{slide.headline?.replace(/\*/g, '').slice(0, 40)}&hellip;&rdquo;
             </p>
           </div>
           <div className="flex gap-2">

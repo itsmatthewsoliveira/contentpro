@@ -151,6 +151,7 @@ function GenerateWorkspace() {
             totalSlides: slide.totalSlides,
           },
           aspectRatio,
+          textLayout: slide.textLayout || 'bottom-stack',
         }),
       })
       const data = await res.json()
@@ -336,17 +337,24 @@ function GenerateWorkspace() {
     const oldSlide = brief.slides.find(s => s.number === updated.number)
     setBrief({ ...brief, slides: brief.slides.map(s => s.number === updated.number ? updated : s) })
 
-    // If text changed and we have a background image, re-composite
-    if (updated.backgroundImage && oldSlide && (
-      oldSlide.headline !== updated.headline ||
-      oldSlide.subtext !== updated.subtext ||
-      oldSlide.cta !== updated.cta
-    )) {
-      // Debounce: wait 500ms after last keystroke
-      if (recompositeTimer.current) clearTimeout(recompositeTimer.current)
-      recompositeTimer.current = setTimeout(() => {
+    // If text or layout changed and we have a background image, re-composite
+    if (updated.backgroundImage && oldSlide) {
+      const textChanged = oldSlide.headline !== updated.headline ||
+        oldSlide.subtext !== updated.subtext ||
+        oldSlide.cta !== updated.cta
+      const layoutChanged = oldSlide.textLayout !== updated.textLayout
+
+      if (layoutChanged) {
+        // Layout switch: re-composite immediately
+        if (recompositeTimer.current) clearTimeout(recompositeTimer.current)
         handleRecomposite(updated)
-      }, 500)
+      } else if (textChanged) {
+        // Text edit: debounce 500ms
+        if (recompositeTimer.current) clearTimeout(recompositeTimer.current)
+        recompositeTimer.current = setTimeout(() => {
+          handleRecomposite(updated)
+        }, 500)
+      }
     }
   }, [brief, handleRecomposite])
 

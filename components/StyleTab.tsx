@@ -3,6 +3,51 @@
 import { Slide } from '@/lib/types'
 import StyleReferences from './StyleReferences'
 
+type TextLayout = 'bottom-stack' | 'center-bold' | 'editorial-split'
+
+const TEXT_LAYOUTS: { id: TextLayout; name: string; description: string; icon: React.ReactNode }[] = [
+  {
+    id: 'bottom-stack',
+    name: 'Bottom Stack',
+    description: 'Text stacked at bottom',
+    icon: (
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <rect x="0" y="0" width="40" height="40" rx="3" fill="rgba(255,255,255,0.05)" />
+        <rect x="4" y="26" width="20" height="3" rx="1" fill="currentColor" opacity="0.8" />
+        <rect x="4" y="31" width="14" height="2" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="4" y="35" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.15" />
+      </svg>
+    ),
+  },
+  {
+    id: 'center-bold',
+    name: 'Center Bold',
+    description: 'Big headline centered',
+    icon: (
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <rect x="0" y="0" width="40" height="40" rx="3" fill="rgba(255,255,255,0.05)" />
+        <rect x="6" y="15" width="28" height="4" rx="1" fill="currentColor" opacity="0.8" />
+        <rect x="10" y="21" width="20" height="2" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="14" y="25" width="12" height="1.5" rx="0.75" fill="currentColor" opacity="0.15" />
+      </svg>
+    ),
+  },
+  {
+    id: 'editorial-split',
+    name: 'Editorial',
+    description: 'Headline top, subtext bottom-right',
+    icon: (
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <rect x="0" y="0" width="40" height="40" rx="3" fill="rgba(255,255,255,0.05)" />
+        <rect x="4" y="6" width="16" height="3" rx="1" fill="currentColor" opacity="0.8" />
+        <rect x="4" y="11" width="12" height="2" rx="1" fill="currentColor" opacity="0.5" />
+        <rect x="22" y="30" width="14" height="2" rx="1" fill="currentColor" opacity="0.3" />
+        <rect x="26" y="34" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.15" />
+      </svg>
+    ),
+  },
+]
+
 interface Props {
   slide: Slide
   brandSlug: string
@@ -22,28 +67,42 @@ export default function StyleTab({
   onResetDirection,
   onSlideUpdate,
 }: Props) {
+  const currentLayout = (slide.textLayout || 'bottom-stack') as TextLayout
+
   return (
     <div className="space-y-4">
-      {/* Layout selector */}
+      {/* Text Layout Picker */}
       <div>
-        <label className="block text-[10px] text-white/25 mb-1.5">Layout</label>
-        <select
-          value={slide.layout || 'headline-hero'}
-          onChange={(e) => onSlideUpdate({ ...slide, layout: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg text-[12px] text-white/70 focus:outline-none appearance-none cursor-pointer"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <option value="headline-hero">Headline Hero</option>
-          <option value="text-over-image">Text Over Image</option>
-          <option value="chip-layout">Chip Layout</option>
-          <option value="split-gradient">Split Gradient</option>
-          <option value="center">Center</option>
-          <option value="top-left">Top Left</option>
-          <option value="top-center">Top Center</option>
-        </select>
+        <label className="block text-[10px] text-white/25 mb-2 uppercase tracking-wider">Text Layout</label>
+        <div className="grid grid-cols-3 gap-2">
+          {TEXT_LAYOUTS.map((layout) => {
+            const isActive = currentLayout === layout.id
+            return (
+              <button
+                key={layout.id}
+                onClick={() => onSlideUpdate({ ...slide, textLayout: layout.id })}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer"
+                style={{
+                  background: isActive ? `${accentColor}15` : 'rgba(255,255,255,0.02)',
+                  border: isActive ? `1px solid ${accentColor}40` : '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <div
+                  className="w-10 h-10"
+                  style={{ color: isActive ? accentColor : 'rgba(255,255,255,0.4)' }}
+                >
+                  {layout.icon}
+                </div>
+                <span
+                  className="text-[9px] font-medium"
+                  style={{ color: isActive ? accentColor : 'rgba(255,255,255,0.35)' }}
+                >
+                  {layout.name}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Style References */}

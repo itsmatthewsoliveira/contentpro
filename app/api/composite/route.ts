@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { compositeTextOnImage, type BrandStyle, type TextOverlayInput } from '@/lib/text-renderer'
+import { compositeTextOnImage, type BrandStyle, type TextOverlayInput, type TextLayout } from '@/lib/text-renderer'
 import { getBrandConfig } from '@/lib/storage'
 
 export async function POST(request: Request) {
@@ -11,6 +11,7 @@ export async function POST(request: Request) {
       brandSlug,
       slide,
       aspectRatio = '1:1',
+      textLayout,
     } = body as {
       backgroundBase64: string
       backgroundMimeType?: string
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         totalSlides?: number
       }
       aspectRatio?: '1:1' | '9:16'
+      textLayout?: TextLayout
     }
 
     if (!backgroundBase64) {
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
       text: textInput,
       brand: brandStyle,
       aspectRatio,
+      textLayout,
     })
 
     return NextResponse.json({

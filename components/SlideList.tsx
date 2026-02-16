@@ -88,7 +88,7 @@ export default function SlideList({
             onDrop={() => handleDrop(i)}
             onDragEnd={handleDragEnd}
             onContextMenu={(e) => handleContextMenu(e, i)}
-            className="relative flex-shrink-0"
+            className="group relative flex-shrink-0"
             style={{
               opacity: isDragging ? 0.4 : 1,
               transition: 'opacity 0.15s',
@@ -164,6 +164,22 @@ export default function SlideList({
                 </div>
               )}
             </button>
+
+            {/* Delete button — visible on hover */}
+            {onDelete && slides.length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(i) }}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                style={{
+                  background: 'rgba(239,68,68,0.9)',
+                }}
+                title="Delete slide"
+              >
+                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         )
       })}

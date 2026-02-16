@@ -79,7 +79,7 @@ export default function SlidePreview({
           </div>
           {!isGenerating && (
             <div className="mt-4 text-white/15 text-xs">
-              Click "Generate" to create this slide's image
+              Click &ldquo;Generate&rdquo; to create this slide&apos;s image
             </div>
           )}
         </div>

@@ -153,6 +153,7 @@ export interface Slide {
   compositionVariation?: string
   accentWords?: string[]
   heroAsset?: string
+  textLayout?: 'bottom-stack' | 'center-bold' | 'editorial-split'
   generatedImage?: string // Final composited image (background + text overlay)
   backgroundImage?: string // Raw background image without text (for re-compositing)
 }

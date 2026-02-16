@@ -4,7 +4,7 @@ import { Slide } from '@/lib/types'
 
 interface Props {
   slide: Slide | null
-  aspectRatio: '1:1' | '9:16'
+  aspectRatio: '1:1' | '4:5' | '9:16'
   accentColor: string
   brandSlug: string
   isGenerating: boolean
@@ -32,8 +32,8 @@ export default function SlidePreview({
       <div
         className="rounded-xl flex items-center justify-center"
         style={{
-          aspectRatio: aspectRatio === '9:16' ? '9/16' : '1/1',
-          maxHeight: aspectRatio === '9:16' ? 640 : 500,
+          aspectRatio: aspectRatio === '9:16' ? '9/16' : aspectRatio === '4:5' ? '4/5' : '1/1',
+          maxHeight: aspectRatio === '9:16' ? 640 : aspectRatio === '4:5' ? 560 : 500,
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.06)',
         }}

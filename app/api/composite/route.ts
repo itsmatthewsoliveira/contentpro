@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         number?: number
         totalSlides?: number
       }
-      aspectRatio?: '1:1' | '9:16'
+      aspectRatio?: '1:1' | '4:5' | '9:16'
       textLayout?: TextLayout
     }
 

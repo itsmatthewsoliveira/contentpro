@@ -42,7 +42,7 @@ function GenerateWorkspace() {
   // Settings
   const [imageEngine, setImageEngine] = useState<'gemini' | 'openai'>('gemini')
   const [imageModel, setImageModel] = useState<'pro' | 'flash'>('pro')
-  const [aspectRatio, setAspectRatio] = useState<'1:1' | '9:16'>('1:1')
+  const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1')
   const [approvedSlides, setApprovedSlides] = useState<Set<number>>(new Set())
 
   const getDefaultDirection = (slug: string) => {
@@ -151,7 +151,7 @@ function GenerateWorkspace() {
             totalSlides: slide.totalSlides,
           },
           aspectRatio,
-          textLayout: slide.textLayout || 'bottom-stack',
+          textLayout: slide.textLayout || 'bottom-left',
         }),
       })
       const data = await res.json()
@@ -493,6 +493,7 @@ function GenerateWorkspace() {
             {/* Aspect Ratio */}
             <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
               <ToggleBtn active={aspectRatio === '1:1'} onClick={() => setAspectRatio('1:1')}>1:1</ToggleBtn>
+              <ToggleBtn active={aspectRatio === '4:5'} onClick={() => setAspectRatio('4:5')}>4:5</ToggleBtn>
               <ToggleBtn active={aspectRatio === '9:16'} onClick={() => setAspectRatio('9:16')}>9:16</ToggleBtn>
             </div>
 

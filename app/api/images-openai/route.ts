@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       brandSlug?: string
       customPrompt?: string
       carouselTheme?: { artDirection?: string; lighting?: string }
-      aspectRatio?: '1:1' | '9:16'
+      aspectRatio?: '1:1' | '4:5' | '9:16'
     }
 
     const scene = compositionPrompt || imageDescription
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       || brandConfig?.visualStyle?.aesthetic
       || 'Professional quality'
     const imageGuidance = brandConfig?.visualStyle?.imageGuidance || ''
-    const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical' : '1080x1080 square'
+    const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical' : aspectRatio === '4:5' ? '1080x1350 portrait' : '1080x1080 square'
 
     const fullPrompt = `BACKGROUND IMAGE ONLY — do NOT render any text, words, letters, numbers, labels, watermarks, logos, or typography. The image must contain ZERO text. Text will be added programmatically.
 
@@ -74,7 +74,7 @@ One single image. No grid or collage. ${dimensions}.`
         model: 'gpt-image-1',
         prompt: fullPrompt,
         n: 1,
-        size: aspectRatio === '9:16' ? '1024x1536' : '1024x1024',
+        size: aspectRatio === '9:16' ? '1024x1536' : aspectRatio === '4:5' ? '1024x1536' : '1024x1024',
       }),
     })
 

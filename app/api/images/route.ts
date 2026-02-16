@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       topic?: string
       slideHeadline?: string
       carouselTheme?: any
-      aspectRatio?: '1:1' | '9:16'
+      aspectRatio?: '1:1' | '4:5' | '9:16'
     }
 
     const prompt = compositionPrompt || imageDescription

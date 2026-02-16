@@ -33,7 +33,7 @@ interface GenerateImageOptions {
   topic?: string
   slideHeadline?: string
   carouselTheme?: CarouselTheme
-  aspectRatio?: '1:1' | '9:16'
+  aspectRatio?: '1:1' | '4:5' | '9:16'
   approvedGuidance?: string
 }
 
@@ -61,7 +61,7 @@ function buildFinalPrompt(
   topic?: string,
   slideHeadline?: string,
   carouselTheme?: CarouselTheme,
-  aspectRatio?: '1:1' | '9:16',
+  aspectRatio?: '1:1' | '4:5' | '9:16',
   approvedGuidance?: string
 ): string {
   const scene = sceneDescription?.trim() || ''
@@ -73,7 +73,7 @@ function buildFinalPrompt(
   const imageGuidance = brandConfig?.visualStyle?.imageGuidance
     ? `STYLE: ${brandConfig.visualStyle.imageGuidance}`
     : ''
-  const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical' : '1080x1080 square'
+  const dimensions = aspectRatio === '9:16' ? '1080x1920 vertical' : aspectRatio === '4:5' ? '1080x1350 portrait' : '1080x1080 square'
   const mood = brandConfig?.designSystem?.photographyStyle?.mood
     || brandConfig?.visualStyle?.aesthetic
     || 'Professional quality'
